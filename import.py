@@ -18,7 +18,7 @@ def file_opener():
 	print(savelocation) 
 
 
-	#establishes a Decks file for the csv file
+	#establishes a Decks file for the csv file being imported
 	try:
 		os.makedirs(savelocation)    
 		print("Directory ", savelocation,  " Created ")
