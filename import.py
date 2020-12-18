@@ -27,8 +27,6 @@ def file_opener():
 
 	finality = os.path.abspath(savelocation)
 	print(finality)
-
-
 	shutil.copy(filedir, finality)
 	print("success")
 
