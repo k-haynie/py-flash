@@ -38,8 +38,9 @@ class Window(QMainWindow):
 
     def clickme(self):
         # Gets directory (filedir)
-        filedir = QFileDialog.getOpenFileName(self, 'Open File', '/')
-        print(filedir)
+        filedir = QFileDialog.getOpenFileName(self, 'Open File', '/', "CSV files (*.csv)")
+        opendir = filedir[0]
+        print(opendir)
 
         # creates a savelocation directory
         savelocation = 'Decks'
@@ -54,8 +55,9 @@ class Window(QMainWindow):
 
         finality = os.path.abspath(savelocation)
         print(finality)
-        shutil.copy(filedir[0], finality)
+        shutil.copy(opendir, finality)
         print("success")
+        self.close()
 
     # create pyqt5 app
 
