@@ -36,3 +36,28 @@ button.pack()
 mainloop()
 
 #figure out a way to break out of the import window. Maybe switch to a tkinter alternative?
+
+
+#Entrer l'version PyQt; requires QtGUI, os, shutil
+
+def file_import(self):
+	# Gets directory (filedir)
+	filedir = QFileDialog.getOpenFileName(self, 'Open File', '/')
+	print(filedir)
+
+	# creates a savelocation directory
+	savelocation = 'Decks'
+	print(savelocation)
+
+	# establishes a Decks file for the csv file being imported
+	try:
+		os.makedirs(savelocation)
+		print("Directory ", savelocation, " Created ")
+	except FileExistsError:
+		print("Directory ", savelocation, " already exists")
+
+	finality = os.path.abspath(savelocation)
+	print(finality)
+	shutil.copy(filedir[0], finality)
+	print("success")
+	self.close()
