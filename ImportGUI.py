@@ -39,25 +39,31 @@ class Ui_MainWindow(QWidget):
 
     def file_import(self):
         # Gets directory (filedir)
-        filedir = QFileDialog.getOpenFileName(self, 'Open File', '/', "CSV files (*.csv)")
-        print(filedir)
-        impFile = filedir[0]
 
-        # creates a savelocation directory
-        savelocation = 'Decks'
+        try:
+            filedir = QFileDialog.getOpenFileName(self, 'Open File', '/', "CSV files (*.csv)")
+            impFile = filedir[0]
+            print(impFile)        # creates a savelocation directory
+
+            savelocation = 'Decks'
 
         # establishes a Decks file for the csv file being imported
-        try:
-            os.makedirs(savelocation)
-            print("Directory ", savelocation, " Created ")
-        except FileExistsError:
-            print("Directory ", savelocation, " already exists")
+            try:
+                os.makedirs(savelocation)
+                print("Directory ", savelocation, " Created ")
+            except FileExistsError:
+                print("Directory ", savelocation, " already exists")
 
-        finality = os.path.abspath(savelocation)
-        print(finality)
-        shutil.copy(impFile, finality)
-        print("success")
-        sys.exit(0)
+            finality = os.path.abspath(savelocation)
+            print(finality)
+            shutil.copy(impFile, finality)
+            print("success")
+            sys.exit(0)
+
+        except IOError:
+            sys.exit(0)
+
+
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
