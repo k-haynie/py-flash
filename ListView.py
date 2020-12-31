@@ -45,8 +45,10 @@ class Ui_Form(QWidget):
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def get_index(self):
-        index = self.decksList.selectedIndexes()[0].row()
-        print(index)
+        refr = self.decksList.selectedIndexes()[0]
+        print(refr.row())
+        print(refr.data())
+
     def file_import(self):
             # Gets directory (filedir)
 
