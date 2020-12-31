@@ -10,7 +10,7 @@
 
 import os
 import shutil
-#import RandomFlashcards
+import RandomFlashcards
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import *
@@ -45,9 +45,14 @@ class Ui_Form(QWidget):
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def get_index(self):
+        Form.hide()
         refr = self.decksList.selectedIndexes()[0]
         print(refr.row())
         print(refr.data())
+        RandomFlashcards.shuffleExec("Decks/" + refr.data())
+        Form.show()
+
+
 
     def file_import(self):
             # Gets directory (filedir)
