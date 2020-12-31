@@ -10,7 +10,8 @@
 
 import os
 import shutil
-import RandomFlashcards
+#import RandomFlashcards
+import practice_interface
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtGui import *
@@ -49,7 +50,7 @@ class Ui_Form(QWidget):
         refr = self.decksList.selectedIndexes()[0]
         print(refr.row())
         print(refr.data())
-        RandomFlashcards.shuffleExec("Decks/" + refr.data())
+        practice_interface.shuffleExec(("Decks/" + refr.data()))
         Form.show()
 
 
