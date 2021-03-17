@@ -16,7 +16,7 @@ class executeGUI():
 		self.functions = deckHandler()	
 		self.ui.setupUi(self.mainW)
 		self.setupSlots(app)
-		self.lightmode(app)
+		self.retrievePrefs(app)
 		self.mainW.show()
 		sys.exit(app.exec_())
 		
@@ -163,10 +163,8 @@ class executeGUI():
 		self.table.setModel(self.model)
 		
 		# signals & slots
-		self.ui.addButton.clicked.connect(lambda: self.addRow(self.tableData))
-		self.ui.addButton.clicked.connect(self.model.layoutChanged.emit)
-		self.ui.removeButton.clicked.connect(lambda: self.removeRow(self.tableData))
-		self.ui.removeButton.clicked.connect(self.model.layoutChanged.emit)
+		self.ui.addButton.clicked.connect(lambda: self.addRow(self.tableData, self.model))
+		self.ui.removeButton.clicked.connect(lambda: self.removeRow(self.tableData, self.model))
 		self.ui.createButton.clicked.connect(lambda: self.creation(self.tableData, self.model))
 		self.ui.editButton.clicked.connect(lambda: self.loadToEdit(tableData, self.model))
 		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
@@ -219,7 +217,7 @@ class executeGUI():
 			os.chmod(deckname, stat.S_IWRITE)
 			self.fileWrite(deckname, tabledata)
 		
-	def removeRow(self, tableData): # removes a row in the Create interface
+	def removeRow(self, tableData, model): # removes a row in the Create interface
 		self.ref = self.ui.tableView.selectionModel().currentIndex().row()
 		try:
 			tableData.pop(self.ref)
@@ -228,8 +226,9 @@ class executeGUI():
 		self.scrollbarTest(tableData)
 		self.ui.tableView.selectRow(len(tableData)-1)
 		self.ui.scrollArea_2.ensureWidgetVisible(self.ui.tableView.selectRow(self.ref-1))
+		model.layoutChanged.emit()
 		
-	def addRow(self, tableData): # adds a row in the Create interface
+	def addRow(self, tableData, model): # adds a row in the Create interface
 		self.ref = self.ui.tableView.selectionModel().currentIndex().row()+1
 		self.after = []
 		if self.ref == len(tableData):
@@ -247,6 +246,7 @@ class executeGUI():
 		self.scrollbarTest(tableData)
 		self.ui.tableView.selectRow(self.ref)
 		self.ui.scrollArea_2.ensureWidgetVisible(self.ui.tableView.selectRow(self.ref-1))
+		model.layoutChanged.emit()
 		
 	def loadToEdit(self, tableData, model): # creates and returns lists of the data from a selected file
 		try:
@@ -314,9 +314,13 @@ class executeGUI():
 		elif self.ui.centralwidget.font().pointSize() == 8:
 			self.window.radioButton_3.setChecked(True)
 		self.window.radioButton.clicked.connect(lambda: self.darkmode(app))
+		self.window.radioButton.clicked.connect(lambda: self.savePrefs(0, "darkmode"))
 		self.window.radioButton_2.clicked.connect(lambda: self.lightmode(app))
+		self.window.radioButton_2.clicked.connect(lambda: self.savePrefs(0, "lightmode"))
 		self.window.radioButton_3.clicked.connect(self.tinytext)
+		self.window.radioButton_3.clicked.connect(lambda: self.savePrefs(1, "tinytext"))
 		self.window.radioButton_4.clicked.connect(self.normaltext)
+		self.window.radioButton_4.clicked.connect(lambda: self.savePrefs(1, "normaltext"))
 		self.inherit.show()
 		
 	def darkmode(self, app): # sets palette with dark values
@@ -361,7 +365,7 @@ class executeGUI():
 			self.ui.tableView.horizontalHeader().setMaximumSectionSize(214)
 			self.ui.tableView.horizontalHeader().setMinimumSectionSize(214)
 			
-	def cancelPractice(self):
+	def cancelPractice(self): # cancels a practicing session, resets deckHandler instance
 		self.ui.tabWidget.setTabVisible(0, True)	
 		self.ui.tabWidget.setTabVisible(2, True)		
 		self.ui.tabWidget.setCurrentIndex(0)
@@ -369,12 +373,55 @@ class executeGUI():
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.functions = deckHandler()
 		
-	def cancelCreation(self, tableData, model):
+	def cancelCreation(self, tableData, model): # clears the Q/A model
 		self.ui.inputName.clear()
 		self.ui.inputName.setReadOnly(False)
+		self.ui.createButton.setText("Create")
 		tableData.clear()
 		model.layoutChanged.emit()
 		
+	def retrievePrefs(self, app): # loads previous settings upon window load
+		if os.path.isfile("preferences.csv"):
+			values = []
+			with open("preferences.csv", "r", newline="", encoding="utf-8") as preferences:
+				values.append([row for row in csv.reader(preferences, delimiter=",")][0])
+			preferences.close()
+			if values[0][0] == "lightmode":
+				self.lightmode(app)
+			elif values[0][0] == "darkmode":
+				self.darkmode(app)
+			if values[0][1] == "tinytext":
+				self.tinytext()
+			elif values[0][1] == "normaltext":
+				self.normaltext()
+		else:
+			with open("preferences.csv", "w+", newline="", encoding="utf-8") as preferences:
+				x = csv.writer(preferences)
+				x.writerow(["lightmode", "tinytext"])
+			preferences.close()
+			self.lightmode(app)
+			self.tinytext()
+		
+	def savePrefs(self, mode, text): # adds the new values to the preferences reference file
+		values = []
+		with open("preferences.csv", "r", newline="", encoding="utf-8") as preferences:
+			values.append([row for row in csv.reader(preferences, delimiter=",")][0])
+		preferences.close()
+		if mode == 0:
+			if text == "darkmode":
+				values[0][0] = "darkmode"
+			elif text == "lightmode":
+				values[0][0] = "lightmode"
+		elif mode == 1:
+			if text == "tinytext":
+				values[0][1] = "tinytext"
+			elif text == "normaltext":
+				values[0][1] = "normaltext"
+		with open("preferences.csv", "w+", newline="", encoding="utf-8") as preferences:
+			preferences.truncate()
+			x = csv.writer(preferences)
+			x.writerow(values[0])
+		preferences.close()
+			
 			
 executeGUI()
-	
