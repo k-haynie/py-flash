@@ -27,6 +27,7 @@ class executeGUI():
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.ui.pushButton.clicked.connect(self.practiceInProgress)
 		self.ui.pushButton.setDisabled(True)
+		self.ui.practiceCancelBtn.clicked.connect(self.cancelPractice)
 		self.ui.lineEdit.returnPressed.connect(self.handleInput)
 		self.ui.importButton.clicked.connect(self.importing)
 		self.ui.settingsButton.clicked.connect(lambda: self.settings(app))
@@ -94,6 +95,7 @@ class executeGUI():
 			self.ui.textBrowser.ensureCursorVisible()
 		except IndexError:
 			self.ui.textBrowser.append("You finished with " + str(self.functions.numright) + " (" + str(round(self.functions.numright/len(self.functions.questions), 2)*100) + "%) cards correct. Congrats!")
+			self.ui.textBrowser.append("Hit enter to quit.")
 			self.functions.inPractice = False
 
 	def handleInput(self): # checks input, responds accordingly
@@ -167,6 +169,7 @@ class executeGUI():
 		self.ui.removeButton.clicked.connect(self.model.layoutChanged.emit)
 		self.ui.createButton.clicked.connect(lambda: self.creation(self.tableData, self.model))
 		self.ui.editButton.clicked.connect(lambda: self.loadToEdit(tableData, self.model))
+		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
 		
 		# cosmetics
 		width = 213 # to account for the scrollbar width; I couldn't find an easy way to dynamically enable it
@@ -198,6 +201,10 @@ class executeGUI():
 					tableData.pop()
 				self.ui.inputName.clear()
 				model.layoutChanged.emit()
+				for i in reversed(range(self.ui.gridLayout.count())): 
+					self.ui.gridLayout.itemAt(i).widget().setParent(None)
+				self.selectionDisplay()
+				self.ui.tabWidget.setCurrentIndex(0)
 		self.ui.inputName.setReadOnly(False)
 			
 	def fileWrite(self, deckname, tabledata): # actually writes the files edited/produced in the interface
@@ -266,7 +273,6 @@ class executeGUI():
 					reformat.append(line)
 			f.close()
 		
-			
 			for i in reformat: # copying, filtering, and formatting the read-in data
 				for j in i:
 					if j != "":
@@ -354,6 +360,21 @@ class executeGUI():
 		else:
 			self.ui.tableView.horizontalHeader().setMaximumSectionSize(214)
 			self.ui.tableView.horizontalHeader().setMinimumSectionSize(214)
+			
+	def cancelPractice(self):
+		self.ui.tabWidget.setTabVisible(0, True)	
+		self.ui.tabWidget.setTabVisible(2, True)		
+		self.ui.tabWidget.setCurrentIndex(0)
+		self.ui.textBrowser.clear()
+		self.ui.tabWidget.setTabVisible(1, False)
+		self.functions = deckHandler()
+		
+	def cancelCreation(self, tableData, model):
+		self.ui.inputName.clear()
+		self.ui.inputName.setReadOnly(False)
+		tableData.clear()
+		model.layoutChanged.emit()
+		
 			
 executeGUI()
 	
