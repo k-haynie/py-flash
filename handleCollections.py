@@ -87,6 +87,13 @@ class handleCollections():
 			pass
 		
 	def deleteCollection(self, ui): # updates model & view for collections
+		for i in range(0, ui.gridLayout.count()):
+			checkBox = ui.gridLayout.itemAt(i).widget()
+			try:
+				checkBox.setCheckState(False)
+			except:
+				pass
+		
 		with open("collections.txt", "r+", encoding="utf-8") as collections:
 			data = json.load(collections)
 			data.pop(ui.comboBox.currentText())
@@ -140,9 +147,11 @@ class handleCollections():
 			self.filedir.setDirectory("Decks/")
 			self.filedir.directoryEntered.connect(lambda: self.dirCheck(self.filedir))
 			impFile = ""
+			
 			if self.filedir.exec_():
 				impFile = self.filedir.selectedFiles()
 			realName = os.path.split(impFile[0])[1]
+			
 			with open("collections.txt", "r+", encoding="utf-8") as collections:
 				data = json.load(collections)
 				if realName in data[ui.comboBox.currentText()]:
@@ -151,20 +160,21 @@ class handleCollections():
 					collections.truncate()
 					json.dump(data, collections)
 			collections.close()
+			
 			if data[ui.comboBox.currentText()] == []:
+				self.deleteCollection(ui)
+			else:
 				for i in range(0, ui.gridLayout.count()):
 					checkBox = ui.gridLayout.itemAt(i).widget()
 					try:
 						checkBox.setCheckState(False)
 					except:
 						pass
-				self.deleteCollection(ui)
-			else:
 				ui.comboBox.setCurrentIndex(0)
 				ui.comboBox.setCurrentIndex(list(data.keys()).index(index))
+				
 		except IndexError:
 			pass
 		
-	def dirCheck(self, dlg): # makes the import-to-edit dialog window non-traversable
-		dlg.setDirectory("Decks/")
-		
+	def dirCheck(self, dlg): # makes the dialog window non-traversable
+		dlg.setDirectory("Decks/")	
