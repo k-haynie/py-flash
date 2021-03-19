@@ -27,8 +27,10 @@ class executeGUI():
 		self.createInit([])
 		self.ui.tabWidget.setCurrentIndex(0)
 		self.ui.tabWidget.setTabVisible(1, False)
-		self.ui.pushButton.clicked.connect(self.practiceInProgress)
+		self.ui.pushButton.clicked.connect(lambda: self.practiceInProgress(False))
+		self.ui.pushButton_3.clicked.connect(lambda: self.practiceInProgress(True))
 		self.ui.pushButton.setDisabled(True)
+		self.ui.pushButton_3.setDisabled(True)
 		self.ui.practiceCancelBtn.clicked.connect(self.cancelPractice)
 		self.ui.lineEdit.returnPressed.connect(self.handleInput)
 		self.ui.importButton.clicked.connect(self.importing)
@@ -70,12 +72,14 @@ class executeGUI():
 				self.functions.decksToPractice.remove(str(name))
 		if self.functions.decksToPractice == []:
 			self.ui.pushButton.setDisabled(True)
+			self.ui.pushButton_3.setDisabled(True)
 		else:
 			self.ui.pushButton.setDisabled(False)
+			self.ui.pushButton_3.setDisabled(False)
 			
-	def practiceInProgress(self): # starts off a deck cycle, passes on to both handlePractice and handleInput
+	def practiceInProgress(self, reverseTrue): # starts off a deck cycle, passes on to both handlePractice and handleInput
 		try:
-			self.functions.practice() 
+			self.functions.practice(reverseTrue) 
 			self.ui.tabWidget.setTabVisible(1, True)
 			self.ui.tabWidget.setCurrentIndex(1)
 			self.ui.tabWidget.setTabVisible(0, False)
