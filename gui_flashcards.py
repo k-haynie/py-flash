@@ -1,7 +1,8 @@
+from handleCollections import handleCollections
 from tableDataManager import tableModeling
+from settings_flashcards import Ui_Dialog
 from at_flashcards import Ui_MainWindow
 from deckHandler import deckHandler
-from settings_flashcards import Ui_Dialog
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import * 
@@ -13,7 +14,8 @@ class executeGUI():
 		app = QApplication(sys.argv)
 		self.mainW = QMainWindow()
 		self.ui = Ui_MainWindow()
-		self.functions = deckHandler()	
+		self.functions = deckHandler()
+		self.dropdown = handleCollections()
 		self.ui.setupUi(self.mainW)
 		self.setupSlots(app)
 		self.retrievePrefs(app)
@@ -21,7 +23,7 @@ class executeGUI():
 		sys.exit(app.exec_())
 		
 	def setupSlots(self, app):
-		self.selectionDisplay()
+		self.selectionDisplay(os.listdir("Decks"))
 		self.createInit([])
 		self.ui.tabWidget.setCurrentIndex(0)
 		self.ui.tabWidget.setTabVisible(1, False)
@@ -31,33 +33,34 @@ class executeGUI():
 		self.ui.lineEdit.returnPressed.connect(self.handleInput)
 		self.ui.importButton.clicked.connect(self.importing)
 		self.ui.settingsButton.clicked.connect(lambda: self.settings(app))
+		self.dropdown.loadOptions(self.ui) # initializes a list in the drop-down menu
+		self.ui.comboBox.setMaxVisibleItems(5)
+		self.ui.comboBox.currentIndexChanged.connect(self.toggleColls)
 		
-	def selectionDisplay(self): # dynamically initializes deck choies
-		self.f = []
+	def selectionDisplay(self, f): # dynamically initializes deck choies
+		self.f = f
 		self.row = 0
 		self.rowIndex = 0
 		try:
 			if os.listdir("Decks") == []:
 				self.ui.label.setText("Try adding some decks first!") # in case there are no decks added
 			else:
-				for i in os.listdir("Decks"):
-					self.f.append(str(i))
-			for i in self.f:
-				self.ui.newCheckBox = QCheckBox()
-				if self.rowIndex == 5:
-					self.row += 1
-					self.rowIndex = 0
-				self.ui.newCheckBox.setObjectName(str(i))
-				self.ui.newCheckBox.setText(str(i))
-				self.ui.newCheckBox.setMinimumSize(90, 18)
-				self.ui.newCheckBox.setMaximumSize(90, 18)
-				self.ui.newCheckBox.stateChanged.connect(lambda state, name=i: self.checked(state, name))
-				self.ui.gridLayout.addWidget(self.ui.newCheckBox, self.row, self.rowIndex)
-				self.rowIndex += 1
-			self.ui.scrollAreaWidgetContents.setLayout(self.ui.gridLayout)
+				for i in self.f:
+					self.ui.newCheckBox = QCheckBox()
+					if self.rowIndex == 5:
+						self.row += 1
+						self.rowIndex = 0
+					self.ui.newCheckBox.setObjectName(str(i))
+					self.ui.newCheckBox.setText(str(i))
+					self.ui.newCheckBox.setMinimumSize(90, 18)
+					self.ui.newCheckBox.setMaximumSize(90, 18)
+					self.ui.newCheckBox.stateChanged.connect(lambda state, name=i: self.checked(state, name))
+					self.ui.gridLayout.addWidget(self.ui.newCheckBox, self.row, self.rowIndex)
+					self.rowIndex += 1
+				self.ui.scrollAreaWidgetContents.setLayout(self.ui.gridLayout)
 		except FileNotFoundError: # in case there is no preexisiting Decks subdirectory
 			os.makedirs("Decks")
-			self.selectionDisplay()
+			self.selectionDisplay(os.listdir("Decks"))
 
 	def checked(self, state, name): # detects origin and passes the name to the operative module
 		if state == Qt.Checked:
@@ -79,7 +82,10 @@ class executeGUI():
 			self.ui.tabWidget.setTabVisible(2, False)
 			for i in range(0, self.ui.gridLayout.count()):
 				checkBox = self.ui.gridLayout.itemAt(i).widget()
-				checkBox.setCheckState(False)
+				try:
+					checkBox.setCheckState(False)
+				except:
+					pass
 			self.functions.inPractice = True
 			self.handlePractice(self.functions.i)	
 		except IndexError:	
@@ -125,7 +131,7 @@ class executeGUI():
 			self.ui.tabWidget.setTabVisible(1, False)
 			self.functions = deckHandler()
 
-	def importing(self): # handles importing a csv file to the app's decks file
+	def importing(self): # handles importing a csv file to the app's decks file - MIGHT BE AN ISSUE w/DELETING DECKS
 		try:
 			self.filedir = QFileDialog(self.ui.tab_3)
 			self.filedir.setOption(self.filedir.DontUseNativeDialog, True)
@@ -143,8 +149,9 @@ class executeGUI():
 				shutil.copy(fromDir, toDir)			
 				for i in reversed(range(self.ui.gridLayout.count())): 
 					self.ui.gridLayout.itemAt(i).widget().setParent(None)
-				self.selectionDisplay()
+				self.selectionDisplay(os.listdir("Decks"))
 				self.ui.tabWidget.setCurrentIndex(0)
+				self.ui.comboBox.setCurrentIndex(0)
 		except IndexError: # thrown when the window is prematurely closed
 			pass 
 		
@@ -201,7 +208,7 @@ class executeGUI():
 				model.layoutChanged.emit()
 				for i in reversed(range(self.ui.gridLayout.count())): 
 					self.ui.gridLayout.itemAt(i).widget().setParent(None)
-				self.selectionDisplay()
+				self.selectionDisplay(os.listdir("Decks"))
 				self.ui.tabWidget.setCurrentIndex(0)
 		self.ui.inputName.setReadOnly(False)
 			
@@ -255,7 +262,7 @@ class executeGUI():
 			self.filedir.setFileMode(QFileDialog.ExistingFile)
 			self.filedir.setNameFilter("CSV files (*.csv)")
 			self.filedir.setDirectory("Decks/")
-			self.filedir.directoryEntered.connect(lambda: self.dirCheck(self.filedir))
+			self.filedir.directoryEntered.connect(lambda: self.dropdown.dirCheck(self.filedir))
 			impFile = ""
 			if self.filedir.exec_():
 				impFile = self.filedir.selectedFiles()
@@ -297,9 +304,6 @@ class executeGUI():
 			self.error("This file is formatted incorrectly.\nTry opening it in Notepad and checking its format.")
 		except IndexError:
 			pass
-			
-	def dirCheck(self, dlg): # makes the import-to-edit dialog window non-traversable
-		dlg.setDirectory("Decks/")
 		
 	def settings(self, app): # handles the settings widget
 		self.inherit = QDialog()
@@ -423,5 +427,18 @@ class executeGUI():
 			x.writerow(values[0])
 		preferences.close()
 			
+	def toggleColls(self): # directs user interaction to handleCollections module
+		self.functions.decksToPractice = [] # erases previously checked options
+		if self.ui.comboBox.currentText() == "All Collections" and self.dropdown.flagForInput:
+			for i in reversed(range(self.ui.gridLayout.count())): 
+				self.ui.gridLayout.itemAt(i).widget().setParent(None)
+			self.selectionDisplay(os.listdir("Decks"))
+		elif self.ui.comboBox.currentText() == "Create Collection" or self.ui.comboBox.currentIndex() == -1: # Creating a new collection
+			self.dropdown.indexChanged(self.ui, self.selectionDisplay)						
+		else:
+			for i in reversed(range(self.ui.gridLayout.count())): 
+				self.ui.gridLayout.itemAt(i).widget().setParent(None)
+			self.dropdown.loadCollection(self.ui, self.selectionDisplay)
 			
+	
 executeGUI()

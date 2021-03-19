@@ -44,6 +44,3 @@ class deckHandler():
 		random.shuffle(self.questions) 
 		random.seed(seed)
 		random.shuffle(self.answers)
-			
-
-		
