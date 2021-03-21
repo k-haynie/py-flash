@@ -33,7 +33,7 @@ class executeGUI():
 		self.ui.pushButton_3.clicked.connect(lambda: self.practiceInProgress(True))
 		self.ui.pushButton.setDisabled(True)
 		self.ui.pushButton_3.setDisabled(True)
-		self.ui.practiceCancelBtn.clicked.connect(lambda: self.confirmDialog(self.cancelPractice, "cancel your practice"))
+		app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
 		
 		self.ui.lineEdit.returnPressed.connect(self.handleInput)
 		self.ui.importButton.clicked.connect(self.importing)
@@ -42,12 +42,13 @@ class executeGUI():
 		self.ui.comboBox.setMaxVisibleItems(5)
 		self.ui.comboBox.currentIndexChanged.connect(lambda: self.loadSelection(self.ui.comboBox.currentText()))
 		self.ui.gridLayout_3.addLayout(self.grid, 0, 0)
-		self.ui.buttonDel.clicked.connect(self.deleteCollection)
+		self.ui.buttonDel.clicked.connect(lambda: self.confirmDialog(self.deleteCollection, "delete this collection"))
 		self.ui.buttonAdd.clicked.connect(self.addToCollection)
 		self.ui.buttonRem.clicked.connect(self.removeFromCollection)
 		self.ui.buttonDel.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_TrashIcon))
 		self.ui.buttonAdd.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirOpenIcon))
 		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirClosedIcon))
+		self.ui.deckDelBtn.hide()
 		
 	def selectionDisplay(self): # dynamically initializes deck choies 
 		self.ui.buttonDel.hide()
@@ -210,6 +211,8 @@ class executeGUI():
 		self.ui.createButton.clicked.connect(lambda: self.creation(self.tableData, self.model))
 		self.ui.editButton.clicked.connect(lambda: self.loadToEdit(tableData, self.model))
 		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
+		self.ui.practiceCancelBtn.clicked.connect(lambda: self.confirmDialog(self.cancelPractice, "cancel your practice"))
+		self.ui.deckDelBtn.clicked.connect(lambda: self.confirmDialog(self.deleteDeck, "delete this deck", tableData, self.model))
 		
 		# cosmetics
 		self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -234,7 +237,6 @@ class executeGUI():
 			elif inputName + ".csv" in os.listdir("Decks"):
 				self.error("This deck already exists!")
 			else:
-				print(tableData)
 				self.fileWrite(deckname, tableData)
 				for i in range(len(tableData)):
 					tableData.pop()
@@ -258,7 +260,6 @@ class executeGUI():
 						if j.strip() != "":
 							testForEmpty.append(j)
 					if testForEmpty != []:
-						print(testForEmpty)
 						filewriter.writerow(i)
 			f.close()		
 		except PermissionError:
@@ -335,13 +336,38 @@ class executeGUI():
 					
 			model.layoutChanged.emit()
 			self.ui.inputName.setText(realName)
-			self.ui.inputName.setReadOnly(True)				
+			self.ui.inputName.setReadOnly(True)	
+			self.ui.deckDelBtn.show()			
 		except FileNotFoundError: # thrown when the window is prematurely closed
 			pass
 		except UnicodeDecodeError:
 			self.error("This file is formatted incorrectly.\nTry opening it in Notepad and checking its format.")
 		except IndexError:
 			pass
+			
+	def deleteDeck(self, tableData, model):
+		name = self.ui.inputName.text().strip()
+		os.remove(f"Decks/{name}.csv")
+		self.ui.inputName.clear()
+		self.ui.inputName.setReadOnly(False)
+		self.ui.deckDelBtn.hide()
+		self.ui.createButton.setText("Create")
+		tableData.clear()
+		model.layoutChanged.emit()
+		with open("collections.txt", "r+", encoding="utf-8") as collections:
+			data = json.load(collections)
+			for i in data:
+				try:
+					if f"{name}.csv" in data[i]:
+						data[i].remove(f"{name}.csv")
+				except:
+					pass
+			collections.seek(0)
+			collections.truncate()
+			json.dump(data, collections)
+		collections.close()
+		self.ui.comboBox.setCurrentIndex(-1)
+		self.ui.comboBox.setCurrentIndex(0)
 		
 	
 	# COSMETICS
@@ -426,11 +452,12 @@ class executeGUI():
 		if proceed == QMessageBox.Yes:
 			self.ui.inputName.clear()
 			self.ui.inputName.setReadOnly(False)
+			self.ui.deckDelBtn.hide()
 			self.ui.createButton.setText("Create")
 			tableData.clear()
 			model.layoutChanged.emit()
 		
-	def confirmDialog(self, method, action):
+	def confirmDialog(self, method, action, tableData=0, model=0):
 		confirmWindow = QMessageBox(self.mainW)
 		confirmWindow.setText(f"Are you sure you want to {action}?")
 		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
@@ -438,7 +465,9 @@ class executeGUI():
 		confirmWindow.setWindowTitle("Confirm")
 		confirmWindow.setDefaultButton(QMessageBox.No)
 		proceed = confirmWindow.exec_()
-		if proceed == QMessageBox.Yes:
+		if tableData != 0 and proceed == QMessageBox.Yes:
+			self.deleteDeck(tableData, model)
+		elif proceed == QMessageBox.Yes:
 			method()
 		
 	
@@ -507,12 +536,12 @@ class executeGUI():
 		self.ui.buttonRem.hide()
 		if self.dropdown.creationInProgress == True:
 			pass
+		elif self.ui.comboBox.currentIndex() == -1:
+			pass
 		elif colName == "All Collections":
 			self.selectionDisplay()
 		elif colName == "Create Collection":
 			self.creationStarted()
-		elif self.dropdown.creationInProgress:
-			pass
 		else:
 			with open("collections.txt", "r", encoding="utf-8") as collections:
 				data = json.load(collections)
