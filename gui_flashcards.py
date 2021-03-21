@@ -7,7 +7,6 @@ from flow_layout import FlowLayout
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import * 
-from PyQt5 import uic
 import shutil, sys, csv, os, json
 
 
@@ -34,7 +33,8 @@ class executeGUI():
 		self.ui.pushButton_3.clicked.connect(lambda: self.practiceInProgress(True))
 		self.ui.pushButton.setDisabled(True)
 		self.ui.pushButton_3.setDisabled(True)
-		self.ui.practiceCancelBtn.clicked.connect(self.cancelPractice)
+		self.ui.practiceCancelBtn.clicked.connect(lambda: self.confirmDialog(self.cancelPractice, "cancel your practice"))
+		
 		self.ui.lineEdit.returnPressed.connect(self.handleInput)
 		self.ui.importButton.clicked.connect(self.importing)
 		self.ui.settingsButton.clicked.connect(lambda: self.settings(app))
@@ -109,8 +109,10 @@ class executeGUI():
 			self.handlePractice(self.functions.i)	
 		except IndexError:	
 			self.error("There is an issue with this deck. Try editing it in the \"Create\" tab.")
+			self.functions = deckHandler()
 		except UnicodeDecodeError:
 			self.error("There is an issue with this deck. Try editing it in the \"Create\" tab.")
+			self.functions = deckHandler()
 
 	def handlePractice(self, i): # fetches the answer from the functional module, prints to the textBrowser
 		try:
@@ -119,7 +121,18 @@ class executeGUI():
 			self.ui.textBrowser.append(self.functions.currentQuestion)
 			self.ui.textBrowser.ensureCursorVisible()
 		except IndexError:
-			self.ui.textBrowser.append("You finished with " + str(self.functions.numright) + " (" + str(round(self.functions.numright/len(self.functions.questions), 2)*100) + "%) cards correct. Congrats!")
+			self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
+			if self.percentageRight < 70:
+				self.message = "You should practice this deck more."
+			elif self.percentageRight < 80:
+				self.message = "Fair job."
+			elif self.percentageRight < 90:
+				self.message = "Kudos!"
+			elif self.percentageRight < 100:
+				self.message = "Terrific Job!"
+			else:
+				self.message = "Perfect!"
+			self.ui.textBrowser.append(f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message}")
 			self.ui.textBrowser.append("Hit enter to quit.")
 			self.functions.inPractice = False
 
@@ -135,7 +148,7 @@ class executeGUI():
 				self.functions.numright += 1
 			elif inputO != self.functions.currentAnswer:
 				self.ui.textBrowser.append(inputO)
-				self.ui.textBrowser.append(str("Incorrect! The answer is actually '" + self.functions.currentAnswer + "'"))
+				self.ui.textBrowser.append(f"Incorrect! The answer is actually '{str(self.functions.currentAnswer)}'")
 				self.ui.textBrowser.append("")
 				self.ui.textBrowser.append("=====================================")
 				self.ui.textBrowser.append("")
@@ -221,14 +234,16 @@ class executeGUI():
 			elif inputName + ".csv" in os.listdir("Decks"):
 				self.error("This deck already exists!")
 			else:
+				print(tableData)
 				self.fileWrite(deckname, tableData)
 				for i in range(len(tableData)):
 					tableData.pop()
 				self.ui.inputName.clear()
 				model.layoutChanged.emit()
 				self.deleteSelection()
-				self.selectionDisplay(os.listdir("Decks"))
+				self.selectionDisplay()
 				self.ui.tabWidget.setCurrentIndex(0)
+				self.ui.comboBox.setCurrentIndex(0)
 		self.ui.inputName.setReadOnly(False)
 			
 	def fileWrite(self, deckname, tabledata): # actually writes the files edited/produced in the interface
@@ -236,8 +251,15 @@ class executeGUI():
 			with open(deckname, "w+", newline="", encoding="utf-8") as f:
 				f.truncate()
 				filewriter = csv.writer(f)
+				
 				for i in tabledata:
-					filewriter.writerow(i)
+					testForEmpty = []
+					for j in i:
+						if j.strip() != "":
+							testForEmpty.append(j)
+					if testForEmpty != []:
+						print(testForEmpty)
+						filewriter.writerow(i)
 			f.close()		
 		except PermissionError:
 			os.chmod(deckname, stat.S_IWRITE)
@@ -297,7 +319,6 @@ class executeGUI():
 				for line in fileReader:
 					reformat.append(line)
 			f.close()
-		
 			for i in reformat: # copying, filtering, and formatting the read-in data
 				for j in i:
 					if j != "":
@@ -305,7 +326,7 @@ class executeGUI():
 							newLine.append(j.split(","))
 						elif "\t" in j: # splits tsv data into an app-readable format
 							newLine.append(j.split("\t"))
-			if newLine == []:
+			if len(newLine) != len(reformat):
 				for i in reformat:
 					tableData.append(i)
 			else:
@@ -395,11 +416,30 @@ class executeGUI():
 		self.functions = deckHandler()
 		
 	def cancelCreation(self, tableData, model): # clears the Q/A model
-		self.ui.inputName.clear()
-		self.ui.inputName.setReadOnly(False)
-		self.ui.createButton.setText("Create")
-		tableData.clear()
-		model.layoutChanged.emit()
+		confirmWindow = QMessageBox(self.mainW)
+		confirmWindow.setText("Are you sure you want to cancel?")
+		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
+		confirmWindow.setIcon(QMessageBox.Warning)
+		confirmWindow.setWindowTitle("Confirm")
+		confirmWindow.setDefaultButton(QMessageBox.No)
+		proceed = confirmWindow.exec_()
+		if proceed == QMessageBox.Yes:
+			self.ui.inputName.clear()
+			self.ui.inputName.setReadOnly(False)
+			self.ui.createButton.setText("Create")
+			tableData.clear()
+			model.layoutChanged.emit()
+		
+	def confirmDialog(self, method, action):
+		confirmWindow = QMessageBox(self.mainW)
+		confirmWindow.setText(f"Are you sure you want to {action}?")
+		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
+		confirmWindow.setIcon(QMessageBox.Warning)
+		confirmWindow.setWindowTitle("Confirm")
+		confirmWindow.setDefaultButton(QMessageBox.No)
+		proceed = confirmWindow.exec_()
+		if proceed == QMessageBox.Yes:
+			method()
 		
 	
 	# USER PREFERENCES
@@ -575,7 +615,7 @@ class executeGUI():
 		a.returnPressed.connect(lambda: self.creationFinished(a))
 		self.ui.comboBox.setCurrentIndex(0)
 		
-	def creationFinished(self, a):
+	def creationFinished(self, a): # handles adding the new collection to the json file
 		realName = a.text()
 		newName = a.text().strip().lower()
 		if newName == "" or newName == "all collections" or newName == "create collections":
