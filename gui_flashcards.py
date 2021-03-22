@@ -671,5 +671,5 @@ class executeGUI():
 			x = list(data.keys()).index(realName)
 			self.ui.comboBox.setCurrentIndex(x)
 			 
-			 
-executeGUI()
+if __name__ == "__main__":
+	executeGUI()
