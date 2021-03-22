@@ -670,6 +670,3 @@ class executeGUI():
 			self.ui.comboBox.currentIndexChanged.connect(lambda: self.loadSelection(self.ui.comboBox.currentText()))
 			x = list(data.keys()).index(realName)
 			self.ui.comboBox.setCurrentIndex(x)
-			 
-if __name__ == "__main__":
-	executeGUI()
