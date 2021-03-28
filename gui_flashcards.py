@@ -374,14 +374,14 @@ class executeGUI():
 	
 	
 	def settings(self, app): # handles the settings widget
-		self.inherit = QDialog()
+		self.inherit = QDialog(self.mainW)
 		self.window = Ui_Dialog()
 		self.window.setupUi(self.inherit)
 		if self.ui.centralwidget.palette().color(QPalette.Base).name() == "#ffffff":
 			self.window.radioButton_2.setChecked(True)
 		elif self.ui.centralwidget.palette().color(QPalette.Base).name() == "#353535":
 			self.window.radioButton.setChecked(True)
-		if self.ui.centralwidget.font().pointSize() == 11:
+		if self.ui.centralwidget.font().pointSize() == 10:
 			self.window.radioButton_4.setChecked(True)
 		elif self.ui.centralwidget.font().pointSize() == 8:
 			self.window.radioButton_3.setChecked(True)
@@ -426,7 +426,7 @@ class executeGUI():
 		
 	def normaltext(self): # sets font size 11
 		font = QFont()
-		font.setPointSize(11)
+		font.setPointSize(10)
 		self.ui.centralwidget.setFont(font)
 			
 	
