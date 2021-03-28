@@ -8,7 +8,7 @@ class tableModeling(QtCore.QAbstractTableModel):
 		
 	def data(self, index, role):
 		if role == Qt.DisplayRole: # manages the info getting returned
-			return self.tableData[index.row()][index.column()] # row is i, column is j
+			return self.tableData[index.row()][index.column()]
 		if role == Qt.EditRole:
 			return self.tableData[index.row()][index.column()]
 			

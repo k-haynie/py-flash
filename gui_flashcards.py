@@ -64,7 +64,7 @@ class executeGUI():
 				for i in self.f:
 					self.ui.newCheckBox = QCheckBox()
 					self.ui.newCheckBox.setObjectName(str(i))
-					self.ui.newCheckBox.setText(str(i))
+					self.ui.newCheckBox.setText(str(i).split(".csv")[0])
 					self.ui.newCheckBox.setMinimumSize(150, 25)
 					self.ui.newCheckBox.setMaximumSize(150, 25)
 					self.ui.newCheckBox.stateChanged.connect(lambda state, name=str(i): self.checked(state, name))
@@ -204,6 +204,7 @@ class executeGUI():
 		self.table = self.ui.tableView
 		self.model = tableModeling(self.tableData)
 		self.table.setModel(self.model)
+		self.addRow(self.tableData, self.model)
 		
 		# signals & slots
 		self.ui.addButton.clicked.connect(lambda: self.addRow(self.tableData, self.model))
@@ -211,8 +212,10 @@ class executeGUI():
 		self.ui.createButton.clicked.connect(lambda: self.creation(self.tableData, self.model))
 		self.ui.editButton.clicked.connect(lambda: self.loadToEdit(tableData, self.model))
 		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
+		# self.cancelBtnShown(self.tableData)
 		self.ui.practiceCancelBtn.clicked.connect(lambda: self.confirmDialog(self.cancelPractice, "cancel your practice"))
 		self.ui.deckDelBtn.clicked.connect(lambda: self.confirmDialog(self.deleteDeck, "delete this deck", tableData, self.model))
+		# self.table.model().dataChanged.connect(lambda: print("Changed!"))
 		
 		# cosmetics
 		self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -220,33 +223,35 @@ class executeGUI():
 		
 	def creation(self, tableData, model): # handles the click of createButton
 		inputName = self.ui.inputName.text().strip()
-		deckname = "Decks/" + inputName + ".csv"		
-		
-		if self.ui.createButton.text() == "Save":
-			self.fileWrite(deckname, tableData)
-			self.ui.createButton.setText("Create")
-			for i in range(len(tableData)):
-				tableData.pop()
-			self.ui.inputName.clear()
-			model.layoutChanged.emit()
-		else:
-			if tableData == []:
-				self.error("You can't create an empty deck!")
-			elif inputName == "":
-				self.error("You need to name your deck!")
-			elif inputName + ".csv" in os.listdir("Decks"):
-				self.error("This deck already exists!")
-			else:
+		deckname = "Decks/" + inputName + ".csv"
+		if not self.checkForEmpty(tableData):
+			pass
+		else:		
+			
+			if self.ui.createButton.text() == "Save":
 				self.fileWrite(deckname, tableData)
+				self.ui.createButton.setText("Create")
 				for i in range(len(tableData)):
 					tableData.pop()
 				self.ui.inputName.clear()
+				tableData.append(["", ""])
 				model.layoutChanged.emit()
-				self.deleteSelection()
-				self.selectionDisplay()
-				self.ui.tabWidget.setCurrentIndex(0)
-				self.ui.comboBox.setCurrentIndex(0)
-		self.ui.inputName.setReadOnly(False)
+			else:
+				if inputName == "":
+					self.error("You need to name your deck!")
+				elif inputName + ".csv" in os.listdir("Decks"):
+					self.error("This deck already exists!")
+				else:
+					self.fileWrite(deckname, tableData)
+					for i in range(len(tableData)):
+						tableData.pop()
+					self.ui.inputName.clear()
+					model.layoutChanged.emit()
+					self.deleteSelection()
+					self.selectionDisplay()
+					self.ui.tabWidget.setCurrentIndex(0)
+					self.ui.comboBox.setCurrentIndex(0)
+			self.ui.inputName.setReadOnly(False)
 			
 	def fileWrite(self, deckname, tabledata): # actually writes the files edited/produced in the interface
 		try:
@@ -267,14 +272,19 @@ class executeGUI():
 			self.fileWrite(deckname, tabledata)
 		
 	def removeRow(self, tableData, model): # removes a row in the Create interface
-		self.ref = self.ui.tableView.selectionModel().currentIndex().row()
-		try:
-			tableData.pop(self.ref)
-		except:
-			pass
-		self.ui.tableView.selectRow(len(tableData)-1)
-		self.ui.scrollArea_2.ensureWidgetVisible(self.ui.tableView.selectRow(self.ref-1))
-		model.layoutChanged.emit()
+		if len(tableData) == 1:
+			tableData.pop()
+			tableData.append(["", ""])
+			model.layoutChanged.emit()
+		else:
+			self.ref = self.ui.tableView.selectionModel().currentIndex().row()
+			try:
+				tableData.pop(self.ref)
+			except:
+				pass
+			self.ui.tableView.selectRow(len(tableData)-1)
+			self.ui.scrollArea_2.ensureWidgetVisible(self.ui.tableView.selectRow(self.ref-1))
+			model.layoutChanged.emit()
 		
 	def addRow(self, tableData, model): # adds a row in the Create interface
 		self.ref = self.ui.tableView.selectionModel().currentIndex().row()+1
@@ -353,6 +363,7 @@ class executeGUI():
 		self.ui.deckDelBtn.hide()
 		self.ui.createButton.setText("Create")
 		tableData.clear()
+		tableData.append(["",""])
 		model.layoutChanged.emit()
 		with open("collections.txt", "r+", encoding="utf-8") as collections:
 			data = json.load(collections)
@@ -368,6 +379,31 @@ class executeGUI():
 		collections.close()
 		self.ui.comboBox.setCurrentIndex(-1)
 		self.ui.comboBox.setCurrentIndex(0)
+		
+	def checkForEmpty(self, tableData):
+		rows = []
+		for count,i in enumerate(tableData):
+			if i[0].strip() == "" and i[1].strip() == "":
+				pass
+			elif i[0].strip() == "" or i[1].strip() == "":
+				rows.append(count)
+		print(rows)
+		if rows == []:
+			return True
+		else:
+			if len(rows) == 1:
+				row = ["Row", "has an empty value."]
+			else:
+				row = ["Rows", "have empty values."]
+			nums = ''.join((str(i+1) + ", ") if rows.index(i) != (len(rows)-1) else str(i+1) for i in [i for i in rows])
+			self.error(f"{row[0]} {nums} {row[1]}")
+			return False
+	
+	def cancelBtnShown(self, tableData):
+		if tableData == [["",""]]:
+			self.ui.pushButton_2.setDisabled(True)
+		else:
+			self.ui.pushButton_2.setDisabled(False)
 		
 	
 	# COSMETICS
@@ -400,7 +436,7 @@ class executeGUI():
 		self.palette = QPalette()
 		self.palette.setColor(QPalette.Text, QColor(255, 255, 255))
 		self.palette.setColor(QPalette.WindowText, QColor(255, 255, 255))
-		self.palette.setColor(QPalette.Background, QColor(0, 0, 0))
+		self.palette.setColor(QPalette.Background, QColor(15, 15, 15))
 		self.palette.setColor(QPalette.Base, QColor(53, 53, 53))
 		self.palette.setColor(QPalette.AlternateBase, QColor(80, 80, 80))
 		self.palette.setColor(QPalette.Button, QColor(53, 53, 53))
@@ -455,6 +491,7 @@ class executeGUI():
 			self.ui.deckDelBtn.hide()
 			self.ui.createButton.setText("Create")
 			tableData.clear()
+			tableData.append(["", ""])
 			model.layoutChanged.emit()
 		
 	def confirmDialog(self, method, action, tableData=0, model=0):
@@ -550,7 +587,7 @@ class executeGUI():
 			for i in data[colName]:
 				self.ui.newCheckBox = QCheckBox()
 				self.ui.newCheckBox.setObjectName(str(i))
-				self.ui.newCheckBox.setText(str(i))
+				self.ui.newCheckBox.setText(str(i).split(".csv")[0])
 				self.ui.newCheckBox.setMinimumSize(150, 25)
 				self.ui.newCheckBox.setMaximumSize(150, 25)
 				self.ui.newCheckBox.stateChanged.connect(lambda state, name=str(i): self.checked(state, name))
