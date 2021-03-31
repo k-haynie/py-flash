@@ -211,7 +211,7 @@ class executeGUI():
 		self.win.setText(message) 
 		self.win.setIcon(QMessageBox.Warning)
 		self.win.setWindowTitle("Warning")
-		self.win.exec()
+		self.win.exec_()
 		
 	def createInit(self, tableData): # initializes the create tab
 		# initialization
@@ -221,6 +221,8 @@ class executeGUI():
 		self.table.setModel(self.model)
 		self.cornerButton = self.table.findChild(QAbstractButton)
 		self.table.setCornerButtonEnabled(False)
+		self.table.horizontalHeader().sectionPressed.disconnect()
+		self.table.verticalHeader().sectionPressed.disconnect()
 		self.addRow(self.tableData, self.model)
 		# signals & slots
 		self.ui.addButton.clicked.connect(lambda: self.addRow(self.tableData, self.model))
