@@ -69,6 +69,20 @@ class executeGUI():
 					self.ui.newCheckBox.setMaximumSize(150, 25)
 					self.ui.newCheckBox.stateChanged.connect(lambda state, name=str(i): self.checked(state, name))
 					self.grid.addWidget(self.ui.newCheckBox)
+					# self.ui.newCheckBox = QPushButton()
+					# self.ui.newCheckBox.setCheckable(True)
+					# self.ui.newCheckBox.setIcon(QIcon("assets/decks.png"))
+					# self.ui.newCheckBox.setText(" " + str(i).split(".csv")[0])
+					# self.ui.newCheckBox.setMinimumSize(150, 25)
+					# self.ui.newCheckBox.setMaximumSize(150, 25)
+					# self.ui.newCheckBox.clicked.connect(lambda state, name=str(i): self.checked(state, name))
+					# self.grid.addWidget(self.ui.newCheckBox)
+					
+				# self.imageBtn = QPushButton()
+				# self.imageBtn.setCheckable(True)
+				# self.imageBtn.setIcon(QIcon("assets/decks.png"))
+				# self.imageBtn.setText(" Text here")
+				# self.grid.addWidget(self.imageBtn)
 		except FileNotFoundError: # in case there is no preexisiting Decks subdirectory
 			os.makedirs("Decks")
 			self.selectionDisplay()
@@ -174,6 +188,7 @@ class executeGUI():
 			self.filedir.setOption(self.filedir.DontUseNativeDialog, True)
 			self.filedir.setFileMode(QFileDialog.ExistingFile)
 			self.filedir.setNameFilter("CSV files (*.csv)")
+			self.filedir.setDirectory("C:")
 			impFile = ""
 			if self.filedir.exec_():
 				impFile = self.filedir.selectedFiles()
@@ -204,8 +219,9 @@ class executeGUI():
 		self.table = self.ui.tableView
 		self.model = tableModeling(self.tableData)
 		self.table.setModel(self.model)
+		self.cornerButton = self.table.findChild(QAbstractButton)
+		self.table.setCornerButtonEnabled(False)
 		self.addRow(self.tableData, self.model)
-		
 		# signals & slots
 		self.ui.addButton.clicked.connect(lambda: self.addRow(self.tableData, self.model))
 		self.ui.removeButton.clicked.connect(lambda: self.removeRow(self.tableData, self.model))
@@ -231,10 +247,11 @@ class executeGUI():
 			if self.ui.createButton.text() == "Save":
 				self.fileWrite(deckname, tableData)
 				self.ui.createButton.setText("Create")
-				for i in range(len(tableData)):
-					tableData.pop()
+				tableData.clear()
 				self.ui.inputName.clear()
 				tableData.append(["", ""])
+				self.ui.tableView.setShowGrid(False)
+				model.verticalHeader = False
 				model.layoutChanged.emit()
 			else:
 				if inputName == "":
@@ -243,8 +260,10 @@ class executeGUI():
 					self.error("This deck already exists!")
 				else:
 					self.fileWrite(deckname, tableData)
-					for i in range(len(tableData)):
-						tableData.pop()
+					tableData.clear()
+					tableData.append(["",""])
+					self.ui.tableView.setShowGrid(False)
+					model.verticaHeader = False
 					self.ui.inputName.clear()
 					model.layoutChanged.emit()
 					self.deleteSelection()
@@ -274,7 +293,9 @@ class executeGUI():
 	def removeRow(self, tableData, model): # removes a row in the Create interface
 		if len(tableData) == 1:
 			tableData.pop()
-			tableData.append(["", ""])
+			tableData.append(["",""])
+			self.ui.tableView.setShowGrid(False)
+			model.verticalHeader = False
 			model.layoutChanged.emit()
 		else:
 			self.ref = self.ui.tableView.selectionModel().currentIndex().row()
@@ -289,7 +310,14 @@ class executeGUI():
 	def addRow(self, tableData, model): # adds a row in the Create interface
 		self.ref = self.ui.tableView.selectionModel().currentIndex().row()+1
 		self.after = []
-		if self.ref == len(tableData):
+		if len(tableData) == 0:
+			tableData.append(["",""])
+			model.verticalHeader = False
+			self.ui.tableView.setShowGrid(False)
+		elif len(tableData) == 1 and not self.model.verticalHeader:
+			self.model.verticalHeader = True
+			self.ui.tableView.setShowGrid(True)
+		elif self.ref == len(tableData):
 			tableData.append(["", ""])
 		else:
 			for i in range(self.ref, len(tableData)):
@@ -300,9 +328,7 @@ class executeGUI():
 			for i in range(len(self.after)):
 				x = self.after.pop()
 				tableData.append(x)
-				
-		
-		self.ui.tableView.selectRow(self.ref)
+				self.ui.tableView.selectRow(self.ref)
 		self.ui.scrollArea_2.ensureWidgetVisible(self.ui.tableView.selectRow(self.ref-1))
 		model.layoutChanged.emit()
 		
@@ -321,6 +347,8 @@ class executeGUI():
 			subName = "Decks/" + realName + ".csv"
 
 			self.ui.createButton.setText("Save")
+			model.verticalHeader = True
+			self.ui.tableView.setShowGrid(True)
 			tableData.clear()
 			reformat = []
 			newLine = []
@@ -337,7 +365,11 @@ class executeGUI():
 							newLine.append(j.split(","))
 						elif "\t" in j: # splits tsv data into an app-readable format
 							newLine.append(j.split("\t"))
-			if len(newLine) != len(reformat):
+			if newLine == [] and reformat == []:
+				tableData.append(["",""])
+				model.verticalHeader = False
+				self.ui.tableView.setShowGrid(False)
+			elif len(newLine) != len(reformat):
 				for i in reformat:
 					tableData.append(i)
 			else:
@@ -363,8 +395,12 @@ class executeGUI():
 		self.ui.deckDelBtn.hide()
 		self.ui.createButton.setText("Create")
 		tableData.clear()
+		
 		tableData.append(["",""])
+		self.ui.tableView.setShowGrid(False)
+		model.verticalHeader = False
 		model.layoutChanged.emit()
+		
 		with open("collections.txt", "r+", encoding="utf-8") as collections:
 			data = json.load(collections)
 			for i in data:
@@ -387,7 +423,6 @@ class executeGUI():
 				pass
 			elif i[0].strip() == "" or i[1].strip() == "":
 				rows.append(count)
-		print(rows)
 		if rows == []:
 			return True
 		else:

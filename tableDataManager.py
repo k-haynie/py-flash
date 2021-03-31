@@ -5,6 +5,7 @@ class tableModeling(QtCore.QAbstractTableModel):
 	def __init__(self, tableData, parent=None):
 		QtCore.QAbstractTableModel.__init__(self, parent)
 		self.tableData = tableData
+		self.verticalHeader = True # managing a permanent header
 		
 	def data(self, index, role):
 		if role == Qt.DisplayRole: # manages the info getting returned
@@ -23,7 +24,10 @@ class tableModeling(QtCore.QAbstractTableModel):
 			if orientation == Qt.Horizontal:
 				return ["Questions", "Answers"][section]
 			if orientation == Qt.Vertical:
-				return (section+1)
+				if len(self.tableData) == 1 and not self.verticalHeader:
+					return "  "
+				else:
+					return (str(section+1))
 				
 	def setData(self, index, value, role):
 		if role == Qt.EditRole:
@@ -31,5 +35,8 @@ class tableModeling(QtCore.QAbstractTableModel):
 			return True
 	
 	def flags(self, index):
-		return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+		if self.verticalHeader:
+			return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+		else:
+			return  Qt.NoItemFlags
 		
