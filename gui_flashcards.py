@@ -62,35 +62,47 @@ class executeGUI():
 				for i in os.listdir("Decks"):
 					self.f.append(str(i))
 				for i in self.f:
-					self.ui.newCheckBox = QCheckBox()
-					self.ui.newCheckBox.setObjectName(str(i))
-					self.ui.newCheckBox.setText(str(i).split(".csv")[0])
-					self.ui.newCheckBox.setMinimumSize(150, 25)
-					self.ui.newCheckBox.setMaximumSize(150, 25)
-					self.ui.newCheckBox.stateChanged.connect(lambda state, name=str(i): self.checked(state, name))
-					self.grid.addWidget(self.ui.newCheckBox)
-					# self.ui.newCheckBox = QPushButton()
-					# self.ui.newCheckBox.setCheckable(True)
-					# self.ui.newCheckBox.setIcon(QIcon("assets/decks.png"))
-					# self.ui.newCheckBox.setText(" " + str(i).split(".csv")[0])
-					# self.ui.newCheckBox.setMinimumSize(150, 25)
-					# self.ui.newCheckBox.setMaximumSize(150, 25)
-					# self.ui.newCheckBox.clicked.connect(lambda state, name=str(i): self.checked(state, name))
-					# self.grid.addWidget(self.ui.newCheckBox)
+					self.ui.newCheckBox = QPushButton()
+					self.ui.newCheckBox.setCheckable(True)
+					self.ui.newCheckBox.setStyleSheet("""
+						QPushButton {
+						border-image: url("assets/decks.png");
+						color: rgb(0,0,0);}
+						QPushButton:checked {
+						border-image: url("assets/decks_selected.png");}
+						""")
+					originalName = (str(i)[::-1].replace("vsc.", "", 1))[::-1] # for a deck named .csv.csv 
+					spacedName = originalName.split(" ")
 					
-				# self.imageBtn = QPushButton()
-				# self.imageBtn.setCheckable(True)
-				# self.imageBtn.setIcon(QIcon("assets/decks.png"))
-				# self.imageBtn.setText(" Text here")
-				# self.grid.addWidget(self.imageBtn)
+					if self.btnWordWrap(spacedName):
+						words = []
+						for i in spacedName:
+							if len(i) > 10:
+								splices = [str(i[x:x+10]) + "-" if len(i) - 10 >= x else i[x:x+10] for x in range(0, len(i), 10)]
+								for i in splices:
+									words.append(i)
+							else:
+								words.append(i)
+						if len(words) > 5:
+							standIn = "".join(str(i) + "\n" for i in words[0:5])
+							realName = standIn + "..."
+						else:
+							realName = "".join(str(i) + "\n" for i in words)
+					else:
+						realName = "".join(str(i) + "\n" for i in spacedName)
+					self.ui.newCheckBox.setText(realName)
+					self.ui.newCheckBox.setMinimumSize(100, 133)
+					self.ui.newCheckBox.setMaximumSize(100, 133)
+					self.ui.newCheckBox.toggled.connect(lambda state, name=str(i): self.checked(state, name))
+					self.grid.addWidget(self.ui.newCheckBox)
 		except FileNotFoundError: # in case there is no preexisiting Decks subdirectory
 			os.makedirs("Decks")
 			self.selectionDisplay()
 
 	def checked(self, state, name): # detects origin and passes the name to the operative module
-		if state == Qt.Checked:
+		if state == True:
 			self.functions.decksToPractice.append(str(name))
-		elif state == Qt.Unchecked:
+		elif state == False:
 			if name in self.functions.decksToPractice:
 				self.functions.decksToPractice.remove(str(name))
 		if self.functions.decksToPractice == []:
@@ -104,9 +116,15 @@ class executeGUI():
 		for i in range(0, self.grid.count()):
 			item = self.grid.itemAt(i).widget()
 			try:
-				item.setCheckState(False)
+				item.setChecked(False)
 			except AttributeError:
 				pass
+				
+	def btnWordWrap(self, listOfWords):
+		for i in listOfWords:
+			if len(i) > 10:
+				return True
+		return False
 	
 	
 	# HANDLES PRACTICE
@@ -134,7 +152,7 @@ class executeGUI():
 			self.functions.currentQuestion = self.functions.questions[i]
 			self.functions.currentAnswer = self.functions.answers[i]
 			self.ui.textBrowser.append(self.functions.currentQuestion)
-			self.ui.textBrowser.ensureCursorVisible()
+			self.ui.textBrowser.verticalScrollBar().setValue(self.ui.textBrowser.verticalScrollBar().maximum())
 		except IndexError:
 			self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
 			if self.percentageRight < 70:
@@ -153,15 +171,15 @@ class executeGUI():
 
 	def handleInput(self): # checks input, responds accordingly
 		if self.functions.inPractice: 
-			inputO = self.ui.lineEdit.text().strip().lower()
-			if inputO == self.functions.currentAnswer:
+			inputO = self.ui.lineEdit.text().strip()
+			if inputO.lower() == self.functions.currentAnswer:
 				self.ui.textBrowser.append(inputO)
 				self.ui.textBrowser.append("You are correct!")
 				self.ui.textBrowser.append("")
 				self.ui.textBrowser.append("=====================================")
 				self.ui.textBrowser.append("")
 				self.functions.numright += 1
-			elif inputO != self.functions.currentAnswer:
+			elif inputO.lower() != self.functions.currentAnswer:
 				self.ui.textBrowser.append(inputO)
 				self.ui.textBrowser.append(f"Incorrect! The answer is actually '{str(self.functions.currentAnswer)}'")
 				self.ui.textBrowser.append("")
@@ -273,6 +291,7 @@ class executeGUI():
 					self.ui.tabWidget.setCurrentIndex(0)
 					self.ui.comboBox.setCurrentIndex(0)
 			self.ui.inputName.setReadOnly(False)
+			self.ui.deckDelBtn.hide()
 			
 	def fileWrite(self, deckname, tabledata): # actually writes the files edited/produced in the interface
 		try:
@@ -450,9 +469,9 @@ class executeGUI():
 		self.inherit = QDialog(self.mainW)
 		self.window = Ui_Dialog()
 		self.window.setupUi(self.inherit)
-		if self.ui.centralwidget.palette().color(QPalette.Base).name() == "#ffffff":
+		if self.mainW.palette().color(QPalette.Background).name() == "#d3d3d3":
 			self.window.radioButton_2.setChecked(True)
-		elif self.ui.centralwidget.palette().color(QPalette.Base).name() == "#353535":
+		elif self.mainW.palette().color(QPalette.Background).name() == "#191919":
 			self.window.radioButton.setChecked(True)
 		if self.ui.centralwidget.font().pointSize() == 10:
 			self.window.radioButton_4.setChecked(True)
@@ -470,37 +489,58 @@ class executeGUI():
 		
 	def darkmode(self, app): # sets palette with dark values
 		app.setStyle("Fusion")
-		self.palette = QPalette()
-		self.palette.setColor(QPalette.Text, QColor(255, 255, 255))
-		self.palette.setColor(QPalette.WindowText, QColor(255, 255, 255))
-		self.palette.setColor(QPalette.Background, QColor(15, 15, 15))
-		self.palette.setColor(QPalette.Base, QColor(53, 53, 53))
-		self.palette.setColor(QPalette.AlternateBase, QColor(80, 80, 80))
-		self.palette.setColor(QPalette.Button, QColor(53, 53, 53))
-		self.palette.setColor(QPalette.ButtonText, QColor(255, 255, 255))
-		app.setPalette(self.palette)
+		darkSettings = ("""{
+		color: rgb(255, 255, 255);
+		background-color: rgb(25, 25, 25);
+		alternate-background-color: rgb(80, 80, 80);}
+		QRadioButton::indicator {
+		border: 1px solid rgb(255, 255, 255);
+		border-radius: 7px}
+		QRadioButton::indicator::checked {
+		background-color: rgb(255, 255, 255)}
+		QTabWidget * {
+		background-color: rgb(53, 53, 53)}
+		QTabWidget QScrollArea * {
+		background-color: rgb(25, 25, 25)}
+		QTabWidget QScrollArea QTableView {
+		background-color: rgb(53, 53, 53);
+		gridline-color: rgb(0, 0, 0)}
+		QTabWidget QScrollArea QHeader {
+		background-color: rgb(53, 53, 53)}
+		QTabWidget QScrollArea QScrollBar {
+		background-color: rgb(53, 53, 53)}
+		QLineEdit {
+		background-color: rgb(80, 80, 80)}
+		""")
+		app.setStyleSheet(f"* {darkSettings}")
 		
 	def lightmode(self, app): # sets palette with light values
 		app.setStyle("Fusion")
-		self.palette = QPalette()
-		self.palette.setColor(QPalette.Text, QColor(0, 0, 0))
-		self.palette.setColor(QPalette.WindowText, QColor(0, 0, 0))
-		self.palette.setColor(QPalette.Background, QColor(211, 211, 211))
-		self.palette.setColor(QPalette.Base, QColor(255, 255, 255))
-		self.palette.setColor(QPalette.AlternateBase, QColor(180, 180, 180))
-		self.palette.setColor(QPalette.Button, QColor(211, 211, 211))
-		self.palette.setColor(QPalette.ButtonText, QColor(0, 0, 0))
-		app.setPalette(self.palette)
+		lightSettings = ("""{
+		color: rgb(0, 0, 0);
+		background-color: rgb(211, 211, 211);
+		alternate-background-color: rgb(180, 180, 180);}
+		QTabWidget * {
+		background-color: rgb(255, 255, 255)}
+		QTabWidget QScrollArea * {
+		background-color: rgb(211, 211, 211)}
+		QTabWidget QScrollArea QTableView {
+		background-color: rgb(255, 255, 255);
+		gridline-color: rgb(0, 0, 0)}
+		QTabWidget QScrollArea QHeader {
+		background-color: rgb(255, 255, 255)}
+		QTabWidget QScrollArea QScrollBar {
+		background-color: rgb(255, 255, 255)}
+		QLineEdit {
+		background-color: rgb(180, 180, 180)}
+		""")
+		app.setStyleSheet(f"* {lightSettings}")
 		
 	def tinytext(self): # sets font size 8
-		font = QFont()
-		font.setPointSize(8)
-		self.ui.centralwidget.setFont(font)
+		self.mainW.setStyleSheet("* {font-size: 8pt}")
 		
 	def normaltext(self): # sets font size 11
-		font = QFont()
-		font.setPointSize(10)
-		self.ui.centralwidget.setFont(font)
+		self.mainW.setStyleSheet("* {font-size: 10pt}")
 			
 	
 	# CANCELING
@@ -594,7 +634,7 @@ class executeGUI():
 	
 	# HANDLES COLLECTIONS FEATURE
 	# - note: I first tried to extensively modularize this code, but that 
-	#         resulted in spaghetti code so I kept most of it in this module. 
+	#         resulted in spaghetti code (with messy parameter passing) so I kept most of it in this module. 
 	
 	
 	def deleteSelection(self): # deletes all the checkboxes in the selection window
@@ -622,12 +662,20 @@ class executeGUI():
 			collections.close()
 			
 			for i in data[colName]:
-				self.ui.newCheckBox = QCheckBox()
-				self.ui.newCheckBox.setObjectName(str(i))
-				self.ui.newCheckBox.setText(str(i).split(".csv")[0])
-				self.ui.newCheckBox.setMinimumSize(150, 25)
-				self.ui.newCheckBox.setMaximumSize(150, 25)
-				self.ui.newCheckBox.stateChanged.connect(lambda state, name=str(i): self.checked(state, name))
+				self.ui.newCheckBox = QPushButton()
+				self.ui.newCheckBox.setCheckable(True)
+				self.ui.newCheckBox.setStyleSheet("""
+					QPushButton {
+					border-image: url("assets/decks.png");
+					color: rgb(0,0,0);}
+					QPushButton:checked {
+					border-image: url("assets/decks_selected.png");}
+					""")
+				originalName = (str(i)[::-1].replace("vsc.", "", 1))[::-1]
+				self.ui.newCheckBox.setText(originalName)
+				self.ui.newCheckBox.setMinimumSize(75, 100)
+				self.ui.newCheckBox.setMaximumSize(75, 100)
+				self.ui.newCheckBox.toggled.connect(lambda state, name=str(i): self.checked(state, name))
 				self.grid.addWidget(self.ui.newCheckBox)
 		
 			self.ui.buttonDel.show()
