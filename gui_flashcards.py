@@ -1,12 +1,14 @@
 from dropDownManager import dropDownModel as dropdown
 from tableDataManager import tableModeling
 from settings_flashcards import Ui_Dialog
-from new_flashcards import Ui_MainWindow
+from new_flashcards_again import Ui_MainWindow
 from deckHandler import deckHandler
 from flow_layout import FlowLayout
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import * 
+import loadDecks
+import tableviewLogic
 import shutil, sys, csv, os, json
 
 
@@ -30,18 +32,19 @@ class executeGUI():
 		self.ui.tabWidget.setCurrentIndex(0)
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.ui.pushButton.clicked.connect(lambda: self.practiceInProgress(False))
-		self.ui.pushButton_3.clicked.connect(lambda: self.practiceInProgress(True))
 		self.ui.pushButton.setDisabled(True)
-		self.ui.pushButton_3.setDisabled(True)
 		app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
 		
-		self.ui.lineEdit.returnPressed.connect(self.handleInput)
-		self.ui.importButton.clicked.connect(self.importing)
-		self.ui.settingsButton.clicked.connect(lambda: self.settings(app))
+		self.ui.toolButton_2.clicked.connect(lambda: self.settings(app))
+		self.ui.importButton.clicked.connect(lambda: tableviewLogic.importing(self.ui.tab_3, self.ui, self.deleteSelection, self.selectionDisplay))
+		self.ui.pushButton_3.clicked.connect(self.creationStarted)
+		
 		self.dropdown.loadOptions(self.ui) # initializes a list in the drop-down menu
 		self.ui.comboBox.setMaxVisibleItems(5)
 		self.ui.comboBox.currentIndexChanged.connect(lambda: self.loadSelection(self.ui.comboBox.currentText()))
+		
 		self.ui.gridLayout_3.addLayout(self.grid, 0, 0)
+		
 		self.ui.buttonDel.clicked.connect(lambda: self.confirmDialog(self.deleteCollection, "delete this collection"))
 		self.ui.buttonAdd.clicked.connect(self.addToCollection)
 		self.ui.buttonRem.clicked.connect(self.removeFromCollection)
@@ -62,39 +65,7 @@ class executeGUI():
 				for i in os.listdir("Decks"):
 					self.f.append(str(i))
 				for i in self.f:
-					self.ui.newCheckBox = QPushButton()
-					self.ui.newCheckBox.setCheckable(True)
-					self.ui.newCheckBox.setStyleSheet("""
-						QPushButton {
-						border-image: url("assets/decks.png");
-						color: rgb(0,0,0);}
-						QPushButton:checked {
-						border-image: url("assets/decks_selected.png");}
-						""")
-					originalName = (str(i)[::-1].replace("vsc.", "", 1))[::-1] # for a deck named .csv.csv 
-					spacedName = originalName.split(" ")
-					
-					if self.btnWordWrap(spacedName):
-						words = []
-						for i in spacedName:
-							if len(i) > 10:
-								splices = [str(i[x:x+10]) + "-" if len(i) - 10 >= x else i[x:x+10] for x in range(0, len(i), 10)]
-								for i in splices:
-									words.append(i)
-							else:
-								words.append(i)
-						if len(words) > 5:
-							standIn = "".join(str(i) + "\n" for i in words[0:5])
-							realName = standIn + "..."
-						else:
-							realName = "".join(str(i) + "\n" for i in words)
-					else:
-						realName = "".join(str(i) + "\n" for i in spacedName)
-					self.ui.newCheckBox.setText(realName)
-					self.ui.newCheckBox.setMinimumSize(100, 133)
-					self.ui.newCheckBox.setMaximumSize(100, 133)
-					self.ui.newCheckBox.toggled.connect(lambda state, name=str(i): self.checked(state, name))
-					self.grid.addWidget(self.ui.newCheckBox)
+					loadDecks.createOption(i, self.ui, self.grid, self.checked)
 		except FileNotFoundError: # in case there is no preexisiting Decks subdirectory
 			os.makedirs("Decks")
 			self.selectionDisplay()
@@ -119,12 +90,6 @@ class executeGUI():
 				item.setChecked(False)
 			except AttributeError:
 				pass
-				
-	def btnWordWrap(self, listOfWords):
-		for i in listOfWords:
-			if len(i) > 10:
-				return True
-		return False
 	
 	
 	# HANDLES PRACTICE
@@ -199,30 +164,6 @@ class executeGUI():
 	
 	# HANDLES TABLEVIEW on TAB 3
 	
-	
-	def importing(self): # handles importing a csv file to the app's decks file - MIGHT BE AN ISSUE w/DELETING DECKS
-		try:
-			self.filedir = QFileDialog(self.ui.tab_3)
-			self.filedir.setOption(self.filedir.DontUseNativeDialog, True)
-			self.filedir.setFileMode(QFileDialog.ExistingFile)
-			self.filedir.setNameFilter("CSV files (*.csv)")
-			self.filedir.setDirectory("C:")
-			impFile = ""
-			if self.filedir.exec_():
-				impFile = self.filedir.selectedFiles()
-			fromDir = impFile[0] 
-			name = os.path.split(fromDir)[1]			
-			toDir = os.path.abspath("Decks/")
-			if name in os.listdir(toDir):
-				self.error("This file already exists!")
-			else:
-				shutil.copy(fromDir, toDir)			
-				self.deleteSelection()
-				self.selectionDisplay()
-				self.ui.tabWidget.setCurrentIndex(0)
-				self.ui.comboBox.setCurrentIndex(0)
-		except IndexError: # thrown when the window is prematurely closed
-			pass 
 		
 	def error(self, message): # easy to customize, will reuse throughout
 		self.win = QMessageBox(self.ui.tab_3)
@@ -241,220 +182,22 @@ class executeGUI():
 		self.table.setCornerButtonEnabled(False)
 		self.table.horizontalHeader().sectionPressed.disconnect()
 		self.table.verticalHeader().sectionPressed.disconnect()
-		self.addRow(self.tableData, self.model)
+		tableviewLogic.addRow(self.tableData, self.model, self.ui)
 		# signals & slots
-		self.ui.addButton.clicked.connect(lambda: self.addRow(self.tableData, self.model))
-		self.ui.removeButton.clicked.connect(lambda: self.removeRow(self.tableData, self.model))
-		self.ui.createButton.clicked.connect(lambda: self.creation(self.tableData, self.model))
-		self.ui.editButton.clicked.connect(lambda: self.loadToEdit(tableData, self.model))
+		self.ui.addButton.clicked.connect(lambda: tableviewLogic.addRow(self.tableData, self.model, self.ui))
+		self.ui.removeButton.clicked.connect(lambda: tableviewLogic.removeRow(self.tableData, self.model, self.ui))
+		self.ui.createButton.clicked.connect(lambda: tableviewLogic.creation(self.tableData, self.model, self.ui, self.error, self.deleteSelection, self.selectionDisplay))
+		self.ui.editButton.clicked.connect(lambda: tableviewLogic.loadToEdit(tableData, self.model, self.ui, self.dropdown, self.error))
 		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
 		# self.cancelBtnShown(self.tableData)
 		self.ui.practiceCancelBtn.clicked.connect(lambda: self.confirmDialog(self.cancelPractice, "cancel your practice"))
-		self.ui.deckDelBtn.clicked.connect(lambda: self.confirmDialog(self.deleteDeck, "delete this deck", tableData, self.model))
-		# self.table.model().dataChanged.connect(lambda: print("Changed!"))
+		self.ui.deckDelBtn.clicked.connect(lambda: self.confirmDialog(tableviewLogic.deleteDeck, "delete this deck", tableData, self.model))
+		self.table.model().dataChanged.connect(lambda: print("Changed!"))
 		
 		# cosmetics
 		self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 		self.table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-		
-	def creation(self, tableData, model): # handles the click of createButton
-		inputName = self.ui.inputName.text().strip()
-		deckname = "Decks/" + inputName + ".csv"
-		if not self.checkForEmpty(tableData):
-			pass
-		else:		
 			
-			if self.ui.createButton.text() == "Save":
-				self.fileWrite(deckname, tableData)
-				self.ui.createButton.setText("Create")
-				tableData.clear()
-				self.ui.inputName.clear()
-				tableData.append(["", ""])
-				self.ui.tableView.setShowGrid(False)
-				model.verticalHeader = False
-				model.layoutChanged.emit()
-			else:
-				if inputName == "":
-					self.error("You need to name your deck!")
-				elif inputName + ".csv" in os.listdir("Decks"):
-					self.error("This deck already exists!")
-				else:
-					self.fileWrite(deckname, tableData)
-					tableData.clear()
-					tableData.append(["",""])
-					self.ui.tableView.setShowGrid(False)
-					model.verticaHeader = False
-					self.ui.inputName.clear()
-					model.layoutChanged.emit()
-					self.deleteSelection()
-					self.selectionDisplay()
-					self.ui.tabWidget.setCurrentIndex(0)
-					self.ui.comboBox.setCurrentIndex(0)
-			self.ui.inputName.setReadOnly(False)
-			self.ui.deckDelBtn.hide()
-			
-	def fileWrite(self, deckname, tabledata): # actually writes the files edited/produced in the interface
-		try:
-			with open(deckname, "w+", newline="", encoding="utf-8") as f:
-				f.truncate()
-				filewriter = csv.writer(f)
-				
-				for i in tabledata:
-					testForEmpty = []
-					for j in i:
-						if j.strip() != "":
-							testForEmpty.append(j)
-					if testForEmpty != []:
-						filewriter.writerow(i)
-			f.close()		
-		except PermissionError:
-			os.chmod(deckname, stat.S_IWRITE)
-			self.fileWrite(deckname, tabledata)
-		
-	def removeRow(self, tableData, model): # removes a row in the Create interface
-		if len(tableData) == 1:
-			tableData.pop()
-			tableData.append(["",""])
-			self.ui.tableView.setShowGrid(False)
-			model.verticalHeader = False
-			model.layoutChanged.emit()
-		else:
-			self.ref = self.ui.tableView.selectionModel().currentIndex().row()
-			try:
-				tableData.pop(self.ref)
-			except:
-				pass
-			self.ui.tableView.selectRow(len(tableData)-1)
-			self.ui.scrollArea_2.ensureWidgetVisible(self.ui.tableView.selectRow(self.ref-1))
-			model.layoutChanged.emit()
-		
-	def addRow(self, tableData, model): # adds a row in the Create interface
-		self.ref = self.ui.tableView.selectionModel().currentIndex().row()+1
-		self.after = []
-		if len(tableData) == 0:
-			tableData.append(["",""])
-			model.verticalHeader = False
-			self.ui.tableView.setShowGrid(False)
-		elif len(tableData) == 1 and not self.model.verticalHeader:
-			self.model.verticalHeader = True
-			self.ui.tableView.setShowGrid(True)
-		elif self.ref == len(tableData):
-			tableData.append(["", ""])
-		else:
-			for i in range(self.ref, len(tableData)):
-				x = tableData.pop()
-				self.after.append(x)
-			tableData.append(["",""])
-			
-			for i in range(len(self.after)):
-				x = self.after.pop()
-				tableData.append(x)
-				self.ui.tableView.selectRow(self.ref)
-		self.ui.scrollArea_2.ensureWidgetVisible(self.ui.tableView.selectRow(self.ref-1))
-		model.layoutChanged.emit()
-		
-	def loadToEdit(self, tableData, model): # creates and returns lists of the data from a selected file
-		try:
-			self.filedir = QFileDialog(self.ui.tab_3)
-			self.filedir.setOption(self.filedir.DontUseNativeDialog, True)
-			self.filedir.setFileMode(QFileDialog.ExistingFile)
-			self.filedir.setNameFilter("CSV files (*.csv)")
-			self.filedir.setDirectory("Decks/")
-			self.filedir.directoryEntered.connect(lambda: self.dropdown.dirCheck(self.filedir))
-			impFile = ""
-			if self.filedir.exec_():
-				impFile = self.filedir.selectedFiles()
-			realName = os.path.split(impFile[0])[1].split(".csv")[0]
-			subName = "Decks/" + realName + ".csv"
-
-			self.ui.createButton.setText("Save")
-			model.verticalHeader = True
-			self.ui.tableView.setShowGrid(True)
-			tableData.clear()
-			reformat = []
-			newLine = []
-			
-			with open(subName, "r", newline="", encoding="utf-8") as f:
-				fileReader = csv.reader(f, delimiter=",")
-				for line in fileReader:
-					reformat.append(line)
-			f.close()
-			for i in reformat: # copying, filtering, and formatting the read-in data
-				for j in i:
-					if j != "":
-						if "," in j: # splits csv data into an app-readable format
-							newLine.append(j.split(","))
-						elif "\t" in j: # splits tsv data into an app-readable format
-							newLine.append(j.split("\t"))
-			if newLine == [] and reformat == []:
-				tableData.append(["",""])
-				model.verticalHeader = False
-				self.ui.tableView.setShowGrid(False)
-			elif len(newLine) != len(reformat):
-				for i in reformat:
-					tableData.append(i)
-			else:
-				for i in newLine:
-					tableData.append(i)
-					
-			model.layoutChanged.emit()
-			self.ui.inputName.setText(realName)
-			self.ui.inputName.setReadOnly(True)	
-			self.ui.deckDelBtn.show()			
-		except FileNotFoundError: # thrown when the window is prematurely closed
-			pass
-		except UnicodeDecodeError:
-			self.error("This file is formatted incorrectly.\nTry opening it in Notepad and checking its format.")
-		except IndexError:
-			pass
-			
-	def deleteDeck(self, tableData, model):
-		name = self.ui.inputName.text().strip()
-		os.remove(f"Decks/{name}.csv")
-		self.ui.inputName.clear()
-		self.ui.inputName.setReadOnly(False)
-		self.ui.deckDelBtn.hide()
-		self.ui.createButton.setText("Create")
-		tableData.clear()
-		
-		tableData.append(["",""])
-		self.ui.tableView.setShowGrid(False)
-		model.verticalHeader = False
-		model.layoutChanged.emit()
-		
-		with open("collections.txt", "r+", encoding="utf-8") as collections:
-			data = json.load(collections)
-			for i in data:
-				try:
-					if f"{name}.csv" in data[i]:
-						data[i].remove(f"{name}.csv")
-				except:
-					pass
-			collections.seek(0)
-			collections.truncate()
-			json.dump(data, collections)
-		collections.close()
-		self.ui.comboBox.setCurrentIndex(-1)
-		self.ui.comboBox.setCurrentIndex(0)
-		
-	def checkForEmpty(self, tableData):
-		rows = []
-		for count,i in enumerate(tableData):
-			if i[0].strip() == "" and i[1].strip() == "":
-				pass
-			elif i[0].strip() == "" or i[1].strip() == "":
-				rows.append(count)
-		if rows == []:
-			return True
-		else:
-			if len(rows) == 1:
-				row = ["Row", "has an empty value."]
-			else:
-				row = ["Rows", "have empty values."]
-			nums = ''.join((str(i+1) + ", ") if rows.index(i) != (len(rows)-1) else str(i+1) for i in [i for i in rows])
-			self.error(f"{row[0]} {nums} {row[1]}")
-			return False
-	
 	def cancelBtnShown(self, tableData):
 		if tableData == [["",""]]:
 			self.ui.pushButton_2.setDisabled(True)
@@ -580,7 +323,7 @@ class executeGUI():
 		confirmWindow.setDefaultButton(QMessageBox.No)
 		proceed = confirmWindow.exec_()
 		if tableData != 0 and proceed == QMessageBox.Yes:
-			self.deleteDeck(tableData, model)
+			tableviewLogic.deleteDeck(tableData, model, self.ui)
 		elif proceed == QMessageBox.Yes:
 			method()
 		
@@ -654,30 +397,13 @@ class executeGUI():
 			pass
 		elif colName == "All Collections":
 			self.selectionDisplay()
-		elif colName == "Create Collection":
-			self.creationStarted()
 		else:
 			with open("collections.txt", "r", encoding="utf-8") as collections:
 				data = json.load(collections)
 			collections.close()
 			
 			for i in data[colName]:
-				self.ui.newCheckBox = QPushButton()
-				self.ui.newCheckBox.setCheckable(True)
-				self.ui.newCheckBox.setStyleSheet("""
-					QPushButton {
-					border-image: url("assets/decks.png");
-					color: rgb(0,0,0);}
-					QPushButton:checked {
-					border-image: url("assets/decks_selected.png");}
-					""")
-				originalName = (str(i)[::-1].replace("vsc.", "", 1))[::-1]
-				self.ui.newCheckBox.setText(originalName)
-				self.ui.newCheckBox.setMinimumSize(75, 100)
-				self.ui.newCheckBox.setMaximumSize(75, 100)
-				self.ui.newCheckBox.toggled.connect(lambda state, name=str(i): self.checked(state, name))
-				self.grid.addWidget(self.ui.newCheckBox)
-		
+				loadDecks.createOption(i, self.ui, self.grid, self.checked)
 			self.ui.buttonDel.show()
 			self.ui.buttonAdd.show()
 			self.ui.buttonRem.show()

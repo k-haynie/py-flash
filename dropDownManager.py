@@ -11,7 +11,7 @@ class dropDownModel():
 	def loadOptions(self, ui): # creates a collections file to simulate subdirectories and sorting
 		if not os.path.isfile("collections.txt"):
 			with open("collections.txt", "w+", encoding="utf-8") as collections:
-				x = {"All Collections": 0, "Create Collection": 0}
+				x = {"All Collections": 0}
 				json.dump(x, collections)
 			collections.close()
 			self.loadOptions(ui)
@@ -21,6 +21,7 @@ class dropDownModel():
 				data = json.load(collections)
 			collections.close()
 			for i in data.keys():
-				self.model.appendRow(QtGui.QStandardItem(i))
+				if i != "Create Collection":
+					self.model.appendRow(QtGui.QStandardItem(i))
 			ui.comboBox.setModel(self.model)			
 			self.model.layoutChanged.emit()
