@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 					
-def createOption(i, ui, grid, responseHandler):
+def createOption(i, ui, grid, responseHandler): # creates a deck image for each deck
 	ui.newCheckBox = QPushButton()
 	ui.newCheckBox.setCheckable(True)
 	ui.newCheckBox.setStyleSheet("""
@@ -21,28 +21,21 @@ def createOption(i, ui, grid, responseHandler):
 	ui.newCheckBox.toggled.connect(lambda state, name=str(i): responseHandler(state, name))
 	grid.addWidget(ui.newCheckBox)
 
-	
-def produceName(listOfWords, ui):
+def produceName(listOfWords, ui): # splices names into lines according to display width
 	data = listOfWords
 	fontRef = ui.centralwidget.font()
 	fm = QFontMetrics(fontRef)
 	words  = []
-	tempWords = []
 	while len(data) > 0:
 		if fm.horizontalAdvance(data[0]) < 60:
-			if len(data) > 2 and fm.horizontalAdvance(data[0] + data[1]) < 60:
-				words.append(data[0] + data[1] + "\n")
-				data.pop(0)
-				data.pop(1)
-			else:
-				words.append(data[0] + "\n")
-				data.pop(0)
+			words.append(data[0])
+			data.pop(0)
 		else:
 			x = [i for i in data[0]]
 			assembledWord = ""
 			while len(x) > 0:
-				if fm.horizontalAdvance(assembledWord + "-" + "\n" + x[0]) > 60:
-					words.append(assembledWord + "-" + "\n")
+				if fm.horizontalAdvance(assembledWord + "-"+ x[0]) > 60:
+					words.append(assembledWord + "-")
 					assembledWord = ""
 					data.pop(0)
 					data.insert(0, "".join([i for i in x]))
@@ -50,8 +43,22 @@ def produceName(listOfWords, ui):
 				else:
 					assembledWord += x[0]
 					x.pop(0)
-	if len(words) > 5:
-		return "".join(i for i in words[0:5]) + "..."
+	name = []
+	assembledLine = ""
+	while len(words) > 0:
+		if fm.horizontalAdvance(assembledLine + " " + words[0]) > 63:
+			name.append(assembledLine + "\n")
+			print(fm.horizontalAdvance(assembledLine))
+			assembledLine = ""
+		else:
+			assembledLine += words[0]
+			words.pop(0)
+			if len(assembledLine) > 0 and len(words) > 0:
+				assembledLine += " "
+			if len(words) == 0:
+				name.append(assembledLine)
+	if len(name) > 5:
+		return "".join(i for i in name[0:5]) + "..."
 	else:
-		return "".join(i for i in words)
+		return "".join(i for i in name)
 					 
