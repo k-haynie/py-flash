@@ -21,7 +21,6 @@ class dropDownModel():
 				data = json.load(collections)
 			collections.close()
 			for i in data.keys():
-				if i != "Create Collection":
-					self.model.appendRow(QtGui.QStandardItem(i))
+				self.model.appendRow(QtGui.QStandardItem(i))
 			ui.comboBox.setModel(self.model)			
 			self.model.layoutChanged.emit()

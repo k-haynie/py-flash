@@ -54,9 +54,7 @@ class executeGUI():
 		self.ui.deckDelBtn.hide()
 		
 	def selectionDisplay(self): # dynamically initializes deck choies 
-		self.ui.buttonDel.hide()
-		self.ui.buttonAdd.hide()
-		self.ui.buttonRem.hide()
+		self.ui.groupBox.hide()
 		self.f = []
 		try:
 			if os.listdir("Decks") == []:
@@ -189,6 +187,7 @@ class executeGUI():
 		self.ui.createButton.clicked.connect(lambda: tableviewLogic.creation(self.tableData, self.model, self.ui, self.error, self.deleteSelection, self.selectionDisplay))
 		self.ui.editButton.clicked.connect(lambda: tableviewLogic.loadToEdit(tableData, self.model, self.ui, self.dropdown, self.error))
 		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
+		self.ui.inputName.setMaxLength(50)
 		# self.cancelBtnShown(self.tableData)
 		self.ui.practiceCancelBtn.clicked.connect(lambda: self.confirmDialog(self.cancelPractice, "cancel your practice"))
 		self.ui.deckDelBtn.clicked.connect(lambda: self.confirmDialog(tableviewLogic.deleteDeck, "delete this deck", tableData, self.model))
@@ -388,9 +387,7 @@ class executeGUI():
 	def loadSelection(self, colName): # repopulates checkboxes
 		self.uncheckAll()
 		self.deleteSelection()
-		self.ui.buttonDel.hide()
-		self.ui.buttonAdd.hide()
-		self.ui.buttonRem.hide()
+		self.ui.groupBox.hide()
 		if self.dropdown.creationInProgress == True:
 			pass
 		elif self.ui.comboBox.currentIndex() == -1:
@@ -404,9 +401,7 @@ class executeGUI():
 			
 			for i in data[colName]:
 				loadDecks.createOption(i, self.ui, self.grid, self.checked)
-			self.ui.buttonDel.show()
-			self.ui.buttonAdd.show()
-			self.ui.buttonRem.show()
+			self.ui.groupBox.show()
 			
 	def deleteCollection(self): # deletes a collection (model and view) 
 		self.uncheckAll()
@@ -489,6 +484,7 @@ class executeGUI():
 		a = QLineEdit()
 		self.ui.comboBox.setLineEdit(a)
 		a.setReadOnly(False)
+		a.setFocus()
 		a.returnPressed.connect(lambda: self.creationFinished(a))
 		self.ui.comboBox.setCurrentIndex(0)
 		
