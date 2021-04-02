@@ -48,7 +48,6 @@ def produceName(listOfWords, ui): # splices names into lines according to displa
 	while len(words) > 0:
 		if fm.horizontalAdvance(assembledLine + " " + words[0]) > 63:
 			name.append(assembledLine + "\n")
-			print(fm.horizontalAdvance(assembledLine))
 			assembledLine = ""
 		else:
 			assembledLine += words[0]
