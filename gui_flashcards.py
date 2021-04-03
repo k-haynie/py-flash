@@ -34,6 +34,7 @@ class executeGUI():
 		self.ui.pushButton.clicked.connect(lambda: self.practiceInProgress(False))
 		self.ui.pushButton.setDisabled(True)
 		app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
+		self.ui.lineEdit.returnPressed.connect(self.handleInput)
 		
 		self.ui.toolButton_2.clicked.connect(lambda: self.settings(app))
 		self.ui.importButton.clicked.connect(lambda: tableviewLogic.importing(self.ui.tab_3, self.ui, self.deleteSelection, self.selectionDisplay))
@@ -100,6 +101,8 @@ class executeGUI():
 			self.ui.tabWidget.setCurrentIndex(1)
 			self.ui.tabWidget.setTabVisible(0, False)
 			self.ui.tabWidget.setTabVisible(2, False)
+			self.ui.numRight.setText("Right: ")
+			self.ui.numWrong.setText("Wrong: ")
 			self.uncheckAll()
 			self.functions.inPractice = True
 			self.handlePractice(self.functions.i)	
@@ -117,20 +120,23 @@ class executeGUI():
 			self.ui.textBrowser.append(self.functions.currentQuestion)
 			self.ui.textBrowser.verticalScrollBar().setValue(self.ui.textBrowser.verticalScrollBar().maximum())
 		except IndexError:
-			self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
-			if self.percentageRight < 70:
-				self.message = "You should practice this deck more."
-			elif self.percentageRight < 80:
-				self.message = "Fair job."
-			elif self.percentageRight < 90:
-				self.message = "Kudos!"
-			elif self.percentageRight < 100:
-				self.message = "Terrific Job!"
-			else:
-				self.message = "Perfect!"
-			self.ui.textBrowser.append(f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message}")
-			self.ui.textBrowser.append("Hit enter to quit.")
-			self.functions.inPractice = False
+			try:
+				self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
+				if self.percentageRight < 70:
+					self.message = "You should practice this deck more."
+				elif self.percentageRight < 80:
+					self.message = "Fair job."
+				elif self.percentageRight < 90:
+					self.message = "Kudos!"
+				elif self.percentageRight < 100:
+					self.message = "Terrific Job!"
+				else:
+					self.message = "Perfect!"
+				self.ui.textBrowser.append(f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message}")
+				self.ui.textBrowser.append("Hit enter to quit.")
+				self.functions.inPractice = False
+			except ZeroDivisionError:
+				self.error("This is an empty deck!") 
 
 	def handleInput(self): # checks input, responds accordingly
 		if self.functions.inPractice: 
@@ -142,12 +148,14 @@ class executeGUI():
 				self.ui.textBrowser.append("=====================================")
 				self.ui.textBrowser.append("")
 				self.functions.numright += 1
+				self.ui.numRight.setText(f"Right: {self.functions.numright}")
 			elif inputO.lower() != self.functions.currentAnswer:
 				self.ui.textBrowser.append(inputO)
 				self.ui.textBrowser.append(f"Incorrect! The answer is actually '{str(self.functions.currentAnswer)}'")
 				self.ui.textBrowser.append("")
 				self.ui.textBrowser.append("=====================================")
 				self.ui.textBrowser.append("")
+				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")
 			self.functions.i += 1
 			self.ui.lineEdit.clear()
 			self.handlePractice(self.functions.i)
@@ -181,6 +189,7 @@ class executeGUI():
 		self.table.horizontalHeader().sectionPressed.disconnect()
 		self.table.verticalHeader().sectionPressed.disconnect()
 		tableviewLogic.addRow(self.tableData, self.model, self.ui)
+		
 		# signals & slots
 		self.ui.addButton.clicked.connect(lambda: tableviewLogic.addRow(self.tableData, self.model, self.ui))
 		self.ui.removeButton.clicked.connect(lambda: tableviewLogic.removeRow(self.tableData, self.model, self.ui))
@@ -188,6 +197,7 @@ class executeGUI():
 		self.ui.editButton.clicked.connect(lambda: tableviewLogic.loadToEdit(tableData, self.model, self.ui, self.dropdown, self.error))
 		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
 		self.ui.inputName.setMaxLength(50)
+		
 		# self.cancelBtnShown(self.tableData)
 		self.ui.practiceCancelBtn.clicked.connect(lambda: self.confirmDialog(self.cancelPractice, "cancel your practice"))
 		self.ui.deckDelBtn.clicked.connect(lambda: self.confirmDialog(tableviewLogic.deleteDeck, "delete this deck", tableData, self.model))
