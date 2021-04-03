@@ -31,7 +31,7 @@ class executeGUI():
 		self.createInit([])
 		self.ui.tabWidget.setCurrentIndex(0)
 		self.ui.tabWidget.setTabVisible(1, False)
-		self.ui.pushButton.clicked.connect(lambda: self.practiceInProgress(False))
+		self.ui.pushButton.clicked.connect(self.practiceInProgress)
 		self.ui.pushButton.setDisabled(True)
 		app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
 		self.ui.lineEdit.returnPressed.connect(self.handleInput)
@@ -39,6 +39,8 @@ class executeGUI():
 		self.ui.toolButton_2.clicked.connect(lambda: self.settings(app))
 		self.ui.importButton.clicked.connect(lambda: tableviewLogic.importing(self.ui.tab_3, self.ui, self.deleteSelection, self.selectionDisplay))
 		self.ui.pushButton_3.clicked.connect(self.creationStarted)
+		self.ui.revPractice.stateChanged.connect(lambda state: self.practiceFlags("reverse", state))
+		self.ui.timedPractice.stateChanged.connect(lambda state: self.practiceFlags("timed", state))
 		
 		self.dropdown.loadOptions(self.ui) # initializes a list in the drop-down menu
 		self.ui.comboBox.setMaxVisibleItems(5)
@@ -77,10 +79,8 @@ class executeGUI():
 				self.functions.decksToPractice.remove(str(name))
 		if self.functions.decksToPractice == []:
 			self.ui.pushButton.setDisabled(True)
-			self.ui.pushButton_3.setDisabled(True)
 		else:
 			self.ui.pushButton.setDisabled(False)
-			self.ui.pushButton_3.setDisabled(False)
 			
 	def uncheckAll(self):
 		for i in range(0, self.grid.count()):
@@ -93,19 +93,33 @@ class executeGUI():
 	
 	# HANDLES PRACTICE
 	
-	
-	def practiceInProgress(self, reverseTrue): # starts off a deck cycle, passes on to both handlePractice and handleInput
+	def practiceFlags(self, name, state):
+		if name == "reverse":
+			if state == 0:
+				self.functions.reverseTrue = False
+			elif state == 2:
+				self.functions.reverseTrue = True
+		elif name == "timed":
+			if state == 0:
+				self.functions.timed = False
+			elif state == 2:
+				self.functions.timed = True
+		
+	def practiceInProgress(self): # starts off a deck cycle, passes on to both handlePractice and handleInput
 		try:
-			self.functions.practice(reverseTrue) 
+			self.functions.practice(self.ui, self.handleTimeout) 
 			self.ui.tabWidget.setTabVisible(1, True)
 			self.ui.tabWidget.setCurrentIndex(1)
 			self.ui.tabWidget.setTabVisible(0, False)
 			self.ui.tabWidget.setTabVisible(2, False)
 			self.ui.numRight.setText("Right: ")
 			self.ui.numWrong.setText("Wrong: ")
+			self.ui.timerDisplay.display("----")
 			self.uncheckAll()
 			self.functions.inPractice = True
-			self.handlePractice(self.functions.i)	
+			self.handlePractice(self.functions.i)
+			self.ui.revPractice.setChecked(False)
+			self.ui.timedPractice.setChecked(False)
 		except IndexError:	
 			self.error("There is an issue with this deck. Try editing it in the \"Create\" tab.")
 			self.functions = deckHandler()
@@ -134,6 +148,7 @@ class executeGUI():
 					self.message = "Perfect!"
 				self.ui.textBrowser.append(f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message}")
 				self.ui.textBrowser.append("Hit enter to quit.")
+				self.functions.timer.stop()
 				self.functions.inPractice = False
 			except ZeroDivisionError:
 				self.error("This is an empty deck!") 
@@ -166,8 +181,13 @@ class executeGUI():
 			self.ui.textBrowser.clear()
 			self.ui.tabWidget.setTabVisible(1, False)
 			self.functions = deckHandler()
+			
+	def handleTimeout(self):
+		self.ui.textBrowser.append("=====================================")
+		self.ui.textBrowser.append(f"You timed out with {self.functions.i}/{len(self.functions.questions)} answered, and {self.functions.numright} correct.")
+		self.ui.textBrowser.append("Hit enter to quit.")
+		self.functions.inPractice = False
 
-	
 	# HANDLES TABLEVIEW on TAB 3
 	
 		
@@ -303,6 +323,7 @@ class executeGUI():
 		self.ui.tabWidget.setTabVisible(2, True)		
 		self.ui.tabWidget.setCurrentIndex(0)
 		self.ui.textBrowser.clear()
+		self.functions.timer.stop()
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.functions = deckHandler()
 		

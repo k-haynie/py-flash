@@ -1,6 +1,7 @@
 import os
 import csv
 import random
+from PyQt5.QtCore import *
 
 class deckHandler():
 	def __init__(self):
@@ -13,15 +14,19 @@ class deckHandler():
 		self.i = 0
 		self.numright = 0
 		self.inPractice = False # response-directing flag
+		self.reverseTrue = False
+		self.timed = False
+		self.count = 0
+		self.timer = QTimer()
 		
-	def practice(self, reverseTrue): 
+	def practice(self, ui, handleTimeout): 
 		deckDirs = []
 		
 		for i in self.decksToPractice:
 			deckDirs.append("Decks/" + str(i)) # creates a list of directories to be practiced
 		
 		for i in deckDirs: # compiles a list of questions and a list of answers
-			if not reverseTrue: 
+			if not self.reverseTrue: 
 				try:
 					with open(i, encoding='utf-8') as f:
 						reader = csv.reader(f, delimiter=",")
@@ -61,3 +66,21 @@ class deckHandler():
 		random.shuffle(self.questions) 
 		random.seed(seed)
 		random.shuffle(self.answers)
+		
+		if self.timed:
+			self.startTimer(ui, handleTimeout)
+	
+	def startTimer(self, ui, handleTimeout):
+		self.count = 7 * len(self.questions)
+		self.timer.timeout.connect(lambda: self.timeChange(ui, handleTimeout))
+		self.timer.start(1000)
+	
+	def timeChange(self, ui, handleTimeout):
+		if self.count == 0:
+			self.timer.stop()
+			handleTimeout()
+		else:
+			self.count -= 1
+			mm = self.count // 60
+			ss = self.count % 60
+			ui.timerDisplay.display(f"{mm:02}:{ss:02}")
