@@ -38,9 +38,9 @@ def creation(tableData, model, ui, error, deleteSelection, selectionDisplay): # 
 			ui.createButton.setText("Create")
 			tableData.clear()
 			ui.inputName.clear()
+			model.verticalHeader = False
 			tableData.append(["", ""])
 			ui.tableView.setShowGrid(False)
-			model.verticalHeader = False
 			model.layoutChanged.emit()
 		else:
 			if inputName == "":
@@ -50,9 +50,9 @@ def creation(tableData, model, ui, error, deleteSelection, selectionDisplay): # 
 			else:
 				fileWrite(deckname, tableData)
 				tableData.clear()
+				model.verticaHeader = False
 				tableData.append(["",""])
 				ui.tableView.setShowGrid(False)
-				model.verticaHeader = False
 				ui.inputName.clear()
 				model.layoutChanged.emit()
 				deleteSelection()
@@ -203,10 +203,9 @@ def deleteDeck(tableData, model, ui): # deletes
 	ui.deckDelBtn.hide()
 	ui.createButton.setText("Create")
 	tableData.clear()
-	
+	model.verticalHeader = False
 	tableData.append(["",""])
 	ui.tableView.setShowGrid(False)
-	model.verticalHeader = False
 	model.layoutChanged.emit()
 	
 	with open("collections.txt", "r+", encoding="utf-8") as collections:

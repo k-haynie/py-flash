@@ -106,26 +106,29 @@ class executeGUI():
 				self.functions.timed = True
 		
 	def practiceInProgress(self): # starts off a deck cycle, passes on to both handlePractice and handleInput
-		try:
-			self.functions.practice(self.ui, self.handleTimeout) 
-			self.ui.tabWidget.setTabVisible(1, True)
-			self.ui.tabWidget.setCurrentIndex(1)
-			self.ui.tabWidget.setTabVisible(0, False)
-			self.ui.tabWidget.setTabVisible(2, False)
-			self.ui.numRight.setText("Right: ")
-			self.ui.numWrong.setText("Wrong: ")
-			self.ui.timerDisplay.display("----")
-			self.uncheckAll()
-			self.functions.inPractice = True
-			self.handlePractice(self.functions.i)
-			self.ui.revPractice.setChecked(False)
-			self.ui.timedPractice.setChecked(False)
-		except IndexError:	
-			self.error("There is an issue with this deck. Try editing it in the \"Create\" tab.")
-			self.functions = deckHandler()
-		except UnicodeDecodeError:
-			self.error("There is an issue with this deck. Try editing it in the \"Create\" tab.")
-			self.functions = deckHandler()
+		self.functions.practice(self.ui, self.handleTimeout) 
+		if len(self.functions.questions) == 0:
+			self.error("This is an empty deck!")
+		else:
+			try:
+				self.ui.tabWidget.setTabVisible(1, True)
+				self.ui.tabWidget.setCurrentIndex(1)
+				self.ui.tabWidget.setTabVisible(0, False)
+				self.ui.tabWidget.setTabVisible(2, False)
+				self.ui.numRight.setText("Right: ")
+				self.ui.numWrong.setText("Wrong: ")
+				self.ui.timerDisplay.display("--:--")
+				self.uncheckAll()
+				self.functions.inPractice = True
+				self.handlePractice(self.functions.i)
+				self.ui.revPractice.setChecked(False)
+				self.ui.timedPractice.setChecked(False)
+			except IndexError:	
+				self.error("There is an issue with this deck. Try editing it in the \"Create\" tab.")
+				self.functions = deckHandler()
+			except UnicodeDecodeError:
+				self.error("There is an issue with this deck. Try editing it in the \"Create\" tab.")
+				self.functions = deckHandler()
 
 	def handlePractice(self, i): # fetches the answer from the functional module, prints to the textBrowser
 		try:
@@ -134,24 +137,21 @@ class executeGUI():
 			self.ui.textBrowser.append(self.functions.currentQuestion)
 			self.ui.textBrowser.verticalScrollBar().setValue(self.ui.textBrowser.verticalScrollBar().maximum())
 		except IndexError:
-			try:
-				self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
-				if self.percentageRight < 70:
-					self.message = "You should practice this deck more."
-				elif self.percentageRight < 80:
-					self.message = "Fair job."
-				elif self.percentageRight < 90:
-					self.message = "Kudos!"
-				elif self.percentageRight < 100:
-					self.message = "Terrific Job!"
-				else:
-					self.message = "Perfect!"
-				self.ui.textBrowser.append(f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message}")
-				self.ui.textBrowser.append("Hit enter to quit.")
-				self.functions.timer.stop()
-				self.functions.inPractice = False
-			except ZeroDivisionError:
-				self.error("This is an empty deck!") 
+			self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
+			if self.percentageRight < 70:
+				self.message = "You should practice this deck more."
+			elif self.percentageRight < 80:
+				self.message = "Fair job."
+			elif self.percentageRight < 90:
+				self.message = "Kudos!"
+			elif self.percentageRight < 100:
+				self.message = "Terrific Job!"
+			else:
+				self.message = "Perfect!"
+			self.ui.textBrowser.append(f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message}")
+			self.ui.textBrowser.append("Hit enter to quit.")
+			self.functions.timer.stop()
+			self.functions.inPractice = False
 
 	def handleInput(self): # checks input, responds accordingly
 		if self.functions.inPractice: 
@@ -188,6 +188,7 @@ class executeGUI():
 		self.ui.textBrowser.append("Hit enter to quit.")
 		self.functions.inPractice = False
 
+	
 	# HANDLES TABLEVIEW on TAB 3
 	
 		
@@ -341,6 +342,8 @@ class executeGUI():
 			self.ui.deckDelBtn.hide()
 			self.ui.createButton.setText("Create")
 			tableData.clear()
+			self.ui.tableView.setShowGrid(False)
+			model.verticalHeader = False
 			tableData.append(["", ""])
 			model.layoutChanged.emit()
 		
