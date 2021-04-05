@@ -7,6 +7,7 @@ from flow_layout import FlowLayout
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import * 
+from fileDialog import Ui_Options
 import loadDecks
 import tableviewLogic
 import shutil, sys, csv, os, json
@@ -49,8 +50,8 @@ class executeGUI():
 		self.ui.gridLayout_3.addLayout(self.grid, 0, 0)
 		
 		self.ui.buttonDel.clicked.connect(lambda: self.confirmDialog(self.deleteCollection, "delete this collection"))
-		self.ui.buttonAdd.clicked.connect(self.addToCollection)
-		self.ui.buttonRem.clicked.connect(self.removeFromCollection)
+		self.ui.buttonAdd.clicked.connect(self.addDialog)
+		self.ui.buttonRem.clicked.connect(self.remDialog)
 		self.ui.buttonDel.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_TrashIcon))
 		self.ui.buttonAdd.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirOpenIcon))
 		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirClosedIcon))
@@ -451,66 +452,68 @@ class executeGUI():
 		self.dropdown.loadOptions(self.ui)
 		self.ui.comboBox.setCurrentIndex(0)
 		
-	def addToCollection(self): # adds to a collection (model and view)
+	def addDialog(self):
 		index = self.ui.comboBox.currentText()
-		try:
-			self.filedir = QFileDialog(self.ui.tab_3)
-			self.filedir.setOption(self.filedir.DontUseNativeDialog, True)
-			self.filedir.setFileMode(QFileDialog.ExistingFile)
-			self.filedir.setNameFilter("CSV files (*.csv)")
-			self.filedir.setDirectory("Decks/")
-			self.filedir.directoryEntered.connect(lambda: self.dirCheck(self.filedir))
-			impFile = ""
-			
-			if self.filedir.exec_():
-				impFile = self.filedir.selectedFiles()
-			realName = os.path.split(impFile[0])[1]
-			
-			with open("collections.txt", "r+", encoding="utf-8") as collections:
-				data = json.load(collections)
-				if realName not in data[self.ui.comboBox.currentText()]:
-					data[self.ui.comboBox.currentText()].append(realName)
-					collections.seek(0)
-					collections.truncate()
-					json.dump(data, collections)
-			collections.close()
-			self.loadSelection(self.ui.comboBox.currentText())
-		except IndexError:
-			pass	
+		
+		with open("collections.txt", "r", encoding="utf-8") as collections:
+			data = json.load(collections)
+			base = data[index]
+		collections.close()
+		
+		excludedNames = set(os.listdir("Decks")) - set(base)
+		self.createDialog(sorted(excludedNames, key=str.casefold), self.addToCollection)		
+		
+	def remDialog(self):
+		index = self.ui.comboBox.currentText()
+		
+		with open("collections.txt", "r", encoding="utf-8") as collections:
+			data = json.load(collections)
+			base = data[index]
+		collections.close()
+		
+		names = set(base)
+		self.createDialog(sorted(names, key=str.casefold), self.removeFromCollection)
+		
+	def addToCollection(self, name): # adds to a collection (model and view)
+		realName = name
+		with open("collections.txt", "r+", encoding="utf-8") as collections:
+			data = json.load(collections)
+			if realName not in data[self.ui.comboBox.currentText()]:
+				data[self.ui.comboBox.currentText()].append(realName)
+				collections.seek(0)
+				collections.truncate()
+				json.dump(data, collections)
+		collections.close()
+		self.loadSelection(self.ui.comboBox.currentText())
 		
 	def dirCheck(self, dlg): # makes the dialog window non-traversable
 		dlg.setDirectory("Decks/")		
 		
-	def removeFromCollection(self): # removes from a collecion (model and view)
+	def createDialog(self, options, method):
+		self.fd = QDialog(self.mainW)
+		self.fdinst = Ui_Options()
+		self.fdinst.setupUi(self.fd)
+		optionModel = QStandardItemModel()
+		optionModel.setColumnCount(1)
+		for i in options:
+			optionModel.appendRow(QStandardItem(QIcon("assets/decks.png"), i))
+		self.fdinst.listView.setModel(optionModel)
+		self.fd.show()
+		self.fd.accepted.connect(lambda: method(self.fdinst.listView.currentIndex().data()))
+		
+	def removeFromCollection(self, name): # removes from a collecion (model and view)
 		index = self.ui.comboBox.currentText()
-		try:
-			with open("collections.txt", "r", encoding="utf-8") as collections:
-				data = json.load(collections)
-			collections.close()
-			self.filedir = QFileDialog(self.ui.tab_3)
-			self.filedir.setOption(self.filedir.DontUseNativeDialog, True)
-			self.filedir.setFileMode(QFileDialog.ExistingFile)
-			self.filedir.setNameFilter("CSV files (*.csv)")
-			self.filedir.setDirectory("Decks/")
-			self.filedir.directoryEntered.connect(lambda: self.dirCheck(self.filedir))
-			impFile = ""
-			
-			if self.filedir.exec_():
-				impFile = self.filedir.selectedFiles()
-			realName = os.path.split(impFile[0])[1]
-			
-			with open("collections.txt", "r+", encoding="utf-8") as collections:
-				data = json.load(collections)
-				if realName in data[index]:
-					data[index].remove(realName)
-					collections.seek(0)
-					collections.truncate()
-					json.dump(data, collections)
-			collections.close()
-			
-			self.loadSelection(index) 
-		except IndexError:
-			pass
+		realName = name
+		with open("collections.txt", "r+", encoding="utf-8") as collections:
+			data = json.load(collections)
+			if realName in data[index]:
+				data[index].remove(realName)
+				collections.seek(0)
+				collections.truncate()
+				json.dump(data, collections)
+		collections.close()
+		
+		self.loadSelection(index) 
 		
 	def creationStarted(self): # starts off the collection process, sends to creationFinished
 		self.dropdown.creationInProgress = True
