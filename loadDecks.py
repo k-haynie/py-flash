@@ -23,7 +23,7 @@ def createOption(i, ui, grid, responseHandler): # creates a deck image for each 
 
 def produceName(listOfWords, ui): # splices names into lines according to display width
 	data = listOfWords
-	fontRef = ui.centralwidget.font()
+	fontRef = ui.tabWidget.font()
 	fm = QFontMetrics(fontRef)
 	words  = []
 	while len(data) > 0:

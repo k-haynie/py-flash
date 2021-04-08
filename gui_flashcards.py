@@ -16,17 +16,17 @@ import shutil, sys, csv, os, json
 class executeGUI(QMainWindow, Ui_MainWindow):
 	def __init__(self, parent=None):
 		super(executeGUI, self).__init__(parent)
-		# app = QApplication(sys.argv)
 		self.mainW = QMainWindow(self)
-		# self.ui = Ui_MainWindow()
 		self.functions = deckHandler()
 		self.dropdown = dropdown()
 		self.grid = FlowLayout()
 		self.ui = self
-		# self.ui.setupUi(self.mainW)
 		self.setupUi(self)
 		self.setupSlots()
 		self.retrievePrefs()
+		# app = QApplication(sys.argv)		
+		# self.ui = Ui_MainWindow()		
+		# self.ui.setupUi(self.mainW)		
 		# self.mainW.show()
 		# sys.exit(app.exec_())
 		
@@ -52,9 +52,8 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		
 		self.ui.gridLayout_3.addLayout(self.grid, 0, 0)
 		
-		self.ui.cardAnswer.setStyleSheet("""
-		border-image: url("assets/decks.png")""")
 		# adds a cardQuestion textEdit for word wrapping, instead of QLabel
+		self.ui.cardAnswer.setStyleSheet("""QPushButton {border-image: url(assets/decks.png)}""")
 		self.ui.cardQuestion.setText("")
 		self.ui.cardQuestion.text = QTextEdit(self.ui.cardQuestion)
 		self.ui.cardQuestion.text.setMouseTracking(False)
@@ -80,10 +79,8 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		if (event.type() == QEvent.KeyPress and widget == self.ui.cardAnswer):
 			key = event.key()
 			if key == Qt.Key_Enter:
-				print("Enter pressed")
 				self.handleInput(self.ui.cardAnswer.toPlainText().strip())
 			elif key == Qt.Key_Return:
-				print("Return pressed")
 				self.handleInput(self.ui.cardAnswer.toPlainText().strip())
 			return QWidget.eventFilter(self, widget, event)
 		return QWidget.eventFilter(self, widget, event)
@@ -155,7 +152,9 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 				self.ui.cardQuestion.setStyleSheet(""" QPushButton {
 				border-image: url("assets/decks.png")}
 				QTextEdit {
-				border: 0}
+				border: 0;
+				background-color: rgba(0, 0, 0, 0);
+				color: black;}
 				""")
 				self.functions.inPractice = True
 				self.handlePractice(self.functions.i)
@@ -172,10 +171,10 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		try:
 			self.functions.currentQuestion = self.functions.questions[i]
 			self.functions.currentAnswer = self.functions.answers[i]
-			fontMet = QFontMetrics(self.centralwidget.font())
+			fontMet = QFontMetrics(self.ui.tabWidget.font())
 			height = fontMet.height()
 			numLines = (fontMet.horizontalAdvance(self.functions.currentQuestion)//150)+1
-			self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 10)
+			self.ui.cardQuestion.text.setMaximumHeight(height * numLines + height)
 			self.ui.cardQuestion.text.setText(self.functions.currentQuestion)
 			self.ui.cardQuestion.text.setAlignment(Qt.AlignCenter)
 		except IndexError:
@@ -191,11 +190,11 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 			else:
 				self.message = "Perfect!"
 			self.ui.cardQuestion.setStyleSheet("border: 0")
-			fontMet = QFontMetrics(self.centralwidget.font())
+			fontMet = QFontMetrics(self.ui.tabWidget.font())
 			height = fontMet.height()
 			finished = f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message} \nHit enter to quit."
 			numLines = (fontMet.horizontalAdvance(finished)//150)+1
-			self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 10)
+			self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 15)
 			self.ui.cardQuestion.text.setText(finished)
 			self.functions.timer.stop()
 			self.functions.inPractice = False
@@ -210,12 +209,12 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 				self.ui.handlePractice(self.functions.i)
 			elif inputO.lower() != self.functions.currentAnswer:
 				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")		
-				self.ui.cardQuestion.setStyleSheet("border: 0")
-				fontMet = QFontMetrics(self.centralwidget.font())
+				self.ui.cardQuestion.setStyleSheet("border: 0; color: white")
+				fontMet = QFontMetrics(self.ui.tabWidget.font())
 				height = fontMet.height()
 				message = f"Incorrect! The answer is '{self.ui.functions.currentAnswer}.'"
 				numLines = (fontMet.horizontalAdvance(message)//150)+1
-				self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 10)
+				self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 15)
 				self.ui.cardQuestion.text.setText(message)
 				self.ui.cardQuestion.text.setAlignment(Qt.AlignCenter)
 				self.functions.gotWrong = True
@@ -224,7 +223,7 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 			self.ui.cardAnswer.clear()
 			self.functions.gotWrong = False
 			self.ui.cardQuestion.setStyleSheet("""QPushButton {border-image: url(assets/decks.png)}
-			QTextEdit {border: 0}""")
+			QTextEdit {border: 0; background: rgba(0, 0, 0, 0); color: black}""")
 			self.handlePractice(self.functions.i)
 		else:
 			self.ui.tabWidget.setTabVisible(0, True)	
@@ -236,11 +235,11 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 			
 	def handleTimeout(self):
 		self.ui.cardQuestion.setStyleSheet("border: 0")
-		fontMet = QFontMetrics(self.centralwidget.font())
+		fontMet = QFontMetrics(self.ui.tabWidget.font())
 		height = fontMet.height()
 		message = f"You timed out with {self.functions.i}/{len(self.functions.questions)} answered, and {self.functions.numright} correct. Hit enter to quit."
 		numLines = (fontMet.horizontalAdvance(message)//150)+1
-		self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 10)
+		self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 15)
 		self.ui.cardQuestion.text.setText(message)
 		self.functions.inPractice = False
 
@@ -298,16 +297,15 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		self.inherit = QDialog(self)
 		self.window = Ui_Dialog()
 		self.window.setupUi(self.inherit)
-		print(qApp.palette().color(QPalette.Background).name(), qApp.font().pointSize())
 		if qApp.palette().color(QPalette.Background).name() == "#d3d3d3":
 			self.window.radioButton_2.setChecked(True)
 		elif qApp.palette().color(QPalette.Background).name() == "#191919":
 			self.window.radioButton.setChecked(True)
 		elif qApp.palette().color(QPalette.Background).name() == "#f0f0f0":
 			self.window.radioButton.setChecked(True)
-		if qApp.font().pointSize() == 10:
+		if self.ui.tabWidget.font().pointSize() == 10:
 			self.window.radioButton_4.setChecked(True)
-		elif qApp.font().pointSize() == 8:
+		elif self.ui.tabWidget.font().pointSize() == 8:
 			self.window.radioButton_3.setChecked(True)
 		self.window.radioButton.clicked.connect(self.darkmode)
 		self.window.radioButton.clicked.connect(lambda: self.savePrefs(0, "darkmode"))
@@ -320,7 +318,7 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		self.inherit.show()
 		
 	def darkmode(self): # sets palette with dark values
-		darkSettings = ("""{
+		darkSettings = ("""* {
 		color: rgb(255, 255, 255);
 		background-color: rgb(25, 25, 25);
 		alternate-background-color: rgb(80, 80, 80);}
@@ -344,7 +342,6 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		background-color: rgb(80, 80, 80)}
 		""")
 		qApp.setStyleSheet(f"* {darkSettings}")
-		print("darkmode")
 		
 	def lightmode(self): # sets palette with light values
 		lightSettings = ("""{
@@ -366,15 +363,12 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		background-color: rgb(180, 180, 180)}
 		""")
 		qApp.setStyleSheet(f"* {lightSettings}")
-		print("lightmode")
 		
 	def tinytext(self): # sets font size 8
-		qApp.setStyleSheet("* {font-size: 8pt}")
-		print("8 font")
+		self.ui.tabWidget.setStyleSheet("* {font-size: 8pt}")
 		
 	def normaltext(self): # sets font size 10
-		qApp.setStyleSheet("* {font-size: 10pt}")
-		print("10 font")
+		self.ui.tabWidget.setStyleSheet("* {font-size: 10pt}")
 			
 	
 	# CANCELING
