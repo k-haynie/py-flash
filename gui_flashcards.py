@@ -13,31 +13,34 @@ import tableviewLogic
 import shutil, sys, csv, os, json
 
 
-class executeGUI():
-	def __init__(self):
-		app = QApplication(sys.argv)
-		self.mainW = QMainWindow()
-		self.ui = Ui_MainWindow()
+class executeGUI(QMainWindow, Ui_MainWindow):
+	def __init__(self, parent=None):
+		super(executeGUI, self).__init__(parent)
+		# app = QApplication(sys.argv)
+		self.mainW = QMainWindow(self)
+		# self.ui = Ui_MainWindow()
 		self.functions = deckHandler()
 		self.dropdown = dropdown()
 		self.grid = FlowLayout()
-		self.ui.setupUi(self.mainW)		
-		self.setupSlots(app)
-		self.retrievePrefs(app)
-		self.mainW.show()
-		sys.exit(app.exec_())
+		self.ui = self
+		# self.ui.setupUi(self.mainW)
+		self.setupUi(self)
+		self.setupSlots()
+		self.retrievePrefs()
+		# self.mainW.show()
+		# sys.exit(app.exec_())
 		
-	def setupSlots(self, app):
+	def setupSlots(self):
 		self.selectionDisplay()
 		self.createInit([])
 		self.ui.tabWidget.setCurrentIndex(0)
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.ui.pushButton.clicked.connect(self.practiceInProgress)
 		self.ui.pushButton.setDisabled(True)
-		app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
-		self.ui.lineEdit.returnPressed.connect(self.handleInput)
 		
-		self.ui.toolButton_2.clicked.connect(lambda: self.settings(app))
+		self.ui.cardAnswer.installEventFilter(self)
+		
+		self.ui.toolButton_2.clicked.connect(self.settings)
 		self.ui.importButton.clicked.connect(lambda: tableviewLogic.importing(self.ui.tab_3, self.ui, self.deleteSelection, self.selectionDisplay))
 		self.ui.pushButton_3.clicked.connect(self.creationStarted)
 		self.ui.revPractice.stateChanged.connect(lambda state: self.practiceFlags("reverse", state))
@@ -49,6 +52,27 @@ class executeGUI():
 		
 		self.ui.gridLayout_3.addLayout(self.grid, 0, 0)
 		
+		self.ui.cardAnswer.setStyleSheet("""
+		border-image: url("assets/decks.png")""")
+		self.ui.cardQuestion.setStyleSheet(""" QPushButton {
+		border-image: url("assets/decks.png")}
+		QTextEdit {
+		border: 0}
+		""")
+		# adds a cardQuestion textEdit for word wrapping, instead of QLabel
+		self.ui.cardQuestion.setText("")
+		self.ui.cardQuestion.text = QTextEdit(self.ui.cardQuestion)
+		self.ui.cardQuestion.text.setMouseTracking(False)
+		self.ui.cardQuestion.text.setMaximumHeight(25)
+		self.ui.cardQuestion.text.viewport().setAutoFillBackground(False)
+		self.ui.cardQuestion.text.setAlignment(Qt.AlignCenter)
+		self.ui.cardQuestion.text.setTextInteractionFlags(Qt.NoTextInteraction)
+		self.ui.cardQuestion.setLayout(QVBoxLayout(self.ui.cardQuestion))
+		self.ui.cardQuestion.layout().setAlignment(Qt.AlignCenter)
+		self.ui.cardQuestion.layout().addStretch()
+		self.ui.cardQuestion.layout().addWidget(self.ui.cardQuestion.text)
+		self.ui.cardQuestion.layout().addStretch()
+		
 		self.ui.buttonDel.clicked.connect(lambda: self.confirmDialog(self.deleteCollection, "delete this collection"))
 		self.ui.buttonAdd.clicked.connect(self.addDialog)
 		self.ui.buttonRem.clicked.connect(self.remDialog)
@@ -56,6 +80,18 @@ class executeGUI():
 		self.ui.buttonAdd.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirOpenIcon))
 		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirClosedIcon))
 		self.ui.deckDelBtn.hide()
+		
+	def eventFilter(self, widget, event):
+		if (event.type() == QEvent.KeyPress and widget == self.ui.cardAnswer):
+			key = event.key()
+			if key == Qt.Key_Enter:
+				print("Enter pressed")
+				self.handleInput(self.ui.cardAnswer.toPlainText().strip())
+			elif key == Qt.Key_Return:
+				print("Return pressed")
+				self.handleInput(self.ui.cardAnswer.toPlainText().strip())
+			return QWidget.eventFilter(self, widget, event)
+		return QWidget.eventFilter(self, widget, event)
 		
 	def selectionDisplay(self): # dynamically initializes deck choies 
 		self.ui.groupBox.hide()
@@ -108,6 +144,7 @@ class executeGUI():
 		
 	def practiceInProgress(self): # starts off a deck cycle, passes on to both handlePractice and handleInput
 		self.functions.practice(self.ui, self.handleTimeout) 
+		
 		if len(self.functions.questions) == 0:
 			self.error("This is an empty deck!")
 		else:
@@ -135,8 +172,12 @@ class executeGUI():
 		try:
 			self.functions.currentQuestion = self.functions.questions[i]
 			self.functions.currentAnswer = self.functions.answers[i]
-			self.ui.textBrowser.append(self.functions.currentQuestion)
-			self.ui.textBrowser.verticalScrollBar().setValue(self.ui.textBrowser.verticalScrollBar().maximum())
+			fontMet = QFontMetrics(self.centralwidget.font())
+			height = fontMet.height()
+			numLines = (fontMet.horizontalAdvance(self.functions.currentQuestion)//150)+1
+			self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 10)
+			self.ui.cardQuestion.text.setText(self.functions.currentQuestion)
+			self.ui.cardQuestion.text.setAlignment(Qt.AlignCenter)
 		except IndexError:
 			self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
 			if self.percentageRight < 70:
@@ -154,26 +195,15 @@ class executeGUI():
 			self.functions.timer.stop()
 			self.functions.inPractice = False
 
-	def handleInput(self): # checks input, responds accordingly
+	def handleInput(self, inputO): # checks input, responds accordingly
 		if self.functions.inPractice: 
-			inputO = self.ui.lineEdit.text().strip()
 			if inputO.lower() == self.functions.currentAnswer:
-				self.ui.textBrowser.append(inputO)
-				self.ui.textBrowser.append("You are correct!")
-				self.ui.textBrowser.append("")
-				self.ui.textBrowser.append("=====================================")
-				self.ui.textBrowser.append("")
 				self.functions.numright += 1
 				self.ui.numRight.setText(f"Right: {self.functions.numright}")
 			elif inputO.lower() != self.functions.currentAnswer:
-				self.ui.textBrowser.append(inputO)
-				self.ui.textBrowser.append(f"Incorrect! The answer is actually '{str(self.functions.currentAnswer)}'")
-				self.ui.textBrowser.append("")
-				self.ui.textBrowser.append("=====================================")
-				self.ui.textBrowser.append("")
 				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")
 			self.functions.i += 1
-			self.ui.lineEdit.clear()
+			self.ui.cardAnswer.clear()
 			self.handlePractice(self.functions.i)
 		else:
 			self.ui.tabWidget.setTabVisible(0, True)	
@@ -194,7 +224,7 @@ class executeGUI():
 	
 		
 	def error(self, message): # easy to customize, will reuse throughout
-		self.win = QMessageBox(self.ui.tab_3)
+		self.win = QMessageBox(self)
 		self.win.setText(message) 
 		self.win.setIcon(QMessageBox.Warning)
 		self.win.setWindowTitle("Warning")
@@ -239,21 +269,24 @@ class executeGUI():
 	# COSMETICS
 	
 	
-	def settings(self, app): # handles the settings widget
-		self.inherit = QDialog(self.mainW)
+	def settings(self): # handles the settings widget
+		self.inherit = QDialog(self)
 		self.window = Ui_Dialog()
 		self.window.setupUi(self.inherit)
-		if self.mainW.palette().color(QPalette.Background).name() == "#d3d3d3":
+		print(qApp.palette().color(QPalette.Background).name(), qApp.font().pointSize())
+		if qApp.palette().color(QPalette.Background).name() == "#d3d3d3":
 			self.window.radioButton_2.setChecked(True)
-		elif self.mainW.palette().color(QPalette.Background).name() == "#191919":
+		elif qApp.palette().color(QPalette.Background).name() == "#191919":
 			self.window.radioButton.setChecked(True)
-		if self.ui.centralwidget.font().pointSize() == 10:
+		elif qApp.palette().color(QPalette.Background).name() == "#f0f0f0":
+			self.window.radioButton.setChecked(True)
+		if qApp.font().pointSize() == 10:
 			self.window.radioButton_4.setChecked(True)
-		elif self.ui.centralwidget.font().pointSize() == 8:
+		elif qApp.font().pointSize() == 8:
 			self.window.radioButton_3.setChecked(True)
-		self.window.radioButton.clicked.connect(lambda: self.darkmode(app))
+		self.window.radioButton.clicked.connect(self.darkmode)
 		self.window.radioButton.clicked.connect(lambda: self.savePrefs(0, "darkmode"))
-		self.window.radioButton_2.clicked.connect(lambda: self.lightmode(app))
+		self.window.radioButton_2.clicked.connect(self.lightmode)
 		self.window.radioButton_2.clicked.connect(lambda: self.savePrefs(0, "lightmode"))
 		self.window.radioButton_3.clicked.connect(self.tinytext)
 		self.window.radioButton_3.clicked.connect(lambda: self.savePrefs(1, "tinytext"))
@@ -261,8 +294,7 @@ class executeGUI():
 		self.window.radioButton_4.clicked.connect(lambda: self.savePrefs(1, "normaltext"))
 		self.inherit.show()
 		
-	def darkmode(self, app): # sets palette with dark values
-		app.setStyle("Fusion")
+	def darkmode(self): # sets palette with dark values
 		darkSettings = ("""{
 		color: rgb(255, 255, 255);
 		background-color: rgb(25, 25, 25);
@@ -286,10 +318,10 @@ class executeGUI():
 		QLineEdit {
 		background-color: rgb(80, 80, 80)}
 		""")
-		app.setStyleSheet(f"* {darkSettings}")
+		qApp.setStyleSheet(f"* {darkSettings}")
+		print("darkmode")
 		
-	def lightmode(self, app): # sets palette with light values
-		app.setStyle("Fusion")
+	def lightmode(self): # sets palette with light values
 		lightSettings = ("""{
 		color: rgb(0, 0, 0);
 		background-color: rgb(211, 211, 211);
@@ -308,13 +340,16 @@ class executeGUI():
 		QLineEdit {
 		background-color: rgb(180, 180, 180)}
 		""")
-		app.setStyleSheet(f"* {lightSettings}")
+		qApp.setStyleSheet(f"* {lightSettings}")
+		print("lightmode")
 		
 	def tinytext(self): # sets font size 8
-		self.mainW.setStyleSheet("* {font-size: 8pt}")
+		qApp.setStyleSheet("* {font-size: 8pt}")
+		print("8 font")
 		
-	def normaltext(self): # sets font size 11
-		self.mainW.setStyleSheet("* {font-size: 10pt}")
+	def normaltext(self): # sets font size 10
+		qApp.setStyleSheet("* {font-size: 10pt}")
+		print("10 font")
 			
 	
 	# CANCELING
@@ -324,13 +359,13 @@ class executeGUI():
 		self.ui.tabWidget.setTabVisible(0, True)	
 		self.ui.tabWidget.setTabVisible(2, True)		
 		self.ui.tabWidget.setCurrentIndex(0)
-		self.ui.textBrowser.clear()
+		self.ui.cardAnswer.clear()
 		self.functions.timer.stop()
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.functions = deckHandler()
 		
 	def cancelCreation(self, tableData, model): # clears the Q/A model
-		confirmWindow = QMessageBox(self.mainW)
+		confirmWindow = QMessageBox(self)
 		confirmWindow.setText("Are you sure you want to cancel?")
 		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
 		confirmWindow.setIcon(QMessageBox.Warning)
@@ -349,7 +384,7 @@ class executeGUI():
 			model.layoutChanged.emit()
 		
 	def confirmDialog(self, method, action, tableData=0, model=0):
-		confirmWindow = QMessageBox(self.mainW)
+		confirmWindow = QMessageBox(self)
 		confirmWindow.setText(f"Are you sure you want to {action}?")
 		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
 		confirmWindow.setIcon(QMessageBox.Warning)
@@ -365,16 +400,16 @@ class executeGUI():
 	# USER PREFERENCES
 	
 	
-	def retrievePrefs(self, app): # loads previous settings upon window load
+	def retrievePrefs(self): # loads previous settings upon window load
 		if os.path.isfile("preferences.csv"):
 			values = []
 			with open("preferences.csv", "r", newline="", encoding="utf-8") as preferences:
 				values.append([row for row in csv.reader(preferences, delimiter=",")][0])
 			preferences.close()
 			if values[0][0] == "lightmode":
-				self.lightmode(app)
+				self.lightmode()
 			elif values[0][0] == "darkmode":
-				self.darkmode(app)
+				self.darkmode()
 			if values[0][1] == "tinytext":
 				self.tinytext()
 			elif values[0][1] == "normaltext":
@@ -384,7 +419,7 @@ class executeGUI():
 				x = csv.writer(preferences)
 				x.writerow(["lightmode", "tinytext"])
 			preferences.close()
-			self.lightmode(app)
+			self.lightmode()
 			self.tinytext()
 		
 	def savePrefs(self, mode, text): # adds the new values to the preferences reference file
@@ -490,7 +525,7 @@ class executeGUI():
 		dlg.setDirectory("Decks/")		
 		
 	def createDialog(self, options, method):
-		self.fd = QDialog(self.mainW)
+		self.fd = QDialog(self)
 		self.fdinst = Ui_Options()
 		self.fdinst.setupUi(self.fd)
 		optionModel = QStandardItemModel()
@@ -551,3 +586,12 @@ class executeGUI():
 			self.ui.comboBox.currentIndexChanged.connect(lambda: self.loadSelection(self.ui.comboBox.currentText()))
 			x = list(data.keys()).index(realName)
 			self.ui.comboBox.setCurrentIndex(x)
+
+def main():
+	app = QApplication(sys.argv)
+	app.setStyle("Fusion")
+	app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
+	win = executeGUI()
+	win.show()
+	sys.exit(app.exec_())
+	

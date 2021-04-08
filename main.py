@@ -1,4 +1,4 @@
-from gui_flashcards import executeGUI
+from gui_flashcards import *
 
 if __name__ == "__main__":
-	executeGUI()
+	main()
