@@ -54,11 +54,6 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		
 		self.ui.cardAnswer.setStyleSheet("""
 		border-image: url("assets/decks.png")""")
-		self.ui.cardQuestion.setStyleSheet(""" QPushButton {
-		border-image: url("assets/decks.png")}
-		QTextEdit {
-		border: 0}
-		""")
 		# adds a cardQuestion textEdit for word wrapping, instead of QLabel
 		self.ui.cardQuestion.setText("")
 		self.ui.cardQuestion.text = QTextEdit(self.ui.cardQuestion)
@@ -157,6 +152,11 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 				self.ui.numWrong.setText("Wrong: ")
 				self.ui.timerDisplay.display("--:--")
 				self.uncheckAll()
+				self.ui.cardQuestion.setStyleSheet(""" QPushButton {
+				border-image: url("assets/decks.png")}
+				QTextEdit {
+				border: 0}
+				""")
 				self.functions.inPractice = True
 				self.handlePractice(self.functions.i)
 				self.ui.revPractice.setChecked(False)
@@ -181,7 +181,7 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		except IndexError:
 			self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
 			if self.percentageRight < 70:
-				self.message = "You should practice this deck more."
+				self.message = "You should practice these cards more."
 			elif self.percentageRight < 80:
 				self.message = "Fair job."
 			elif self.percentageRight < 90:
@@ -190,33 +190,58 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 				self.message = "Terrific Job!"
 			else:
 				self.message = "Perfect!"
-			self.ui.textBrowser.append(f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message}")
-			self.ui.textBrowser.append("Hit enter to quit.")
+			self.ui.cardQuestion.setStyleSheet("border: 0")
+			fontMet = QFontMetrics(self.centralwidget.font())
+			height = fontMet.height()
+			finished = f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message} \nHit enter to quit."
+			numLines = (fontMet.horizontalAdvance(finished)//150)+1
+			self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 10)
+			self.ui.cardQuestion.text.setText(finished)
 			self.functions.timer.stop()
 			self.functions.inPractice = False
 
 	def handleInput(self, inputO): # checks input, responds accordingly
-		if self.functions.inPractice: 
+		if self.functions.inPractice and not self.functions.gotWrong: 
 			if inputO.lower() == self.functions.currentAnswer:
 				self.functions.numright += 1
 				self.ui.numRight.setText(f"Right: {self.functions.numright}")
+				self.ui.cardAnswer.clear()
+				self.functions.i += 1
+				self.ui.handlePractice(self.functions.i)
 			elif inputO.lower() != self.functions.currentAnswer:
-				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")
-			self.functions.i += 1
+				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")		
+				self.ui.cardQuestion.setStyleSheet("border: 0")
+				fontMet = QFontMetrics(self.centralwidget.font())
+				height = fontMet.height()
+				message = f"Incorrect! The answer is '{self.ui.functions.currentAnswer}.'"
+				numLines = (fontMet.horizontalAdvance(message)//150)+1
+				self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 10)
+				self.ui.cardQuestion.text.setText(message)
+				self.ui.cardQuestion.text.setAlignment(Qt.AlignCenter)
+				self.functions.gotWrong = True
+				self.functions.i += 1					
+		elif self.functions.inPractice:
 			self.ui.cardAnswer.clear()
+			self.functions.gotWrong = False
+			self.ui.cardQuestion.setStyleSheet("""QPushButton {border-image: url(assets/decks.png)}
+			QTextEdit {border: 0}""")
 			self.handlePractice(self.functions.i)
 		else:
 			self.ui.tabWidget.setTabVisible(0, True)	
 			self.ui.tabWidget.setTabVisible(2, True)		
 			self.ui.tabWidget.setCurrentIndex(0)
-			self.ui.textBrowser.clear()
+			self.ui.cardAnswer.clear()
 			self.ui.tabWidget.setTabVisible(1, False)
 			self.functions = deckHandler()
 			
 	def handleTimeout(self):
-		self.ui.textBrowser.append("=====================================")
-		self.ui.textBrowser.append(f"You timed out with {self.functions.i}/{len(self.functions.questions)} answered, and {self.functions.numright} correct.")
-		self.ui.textBrowser.append("Hit enter to quit.")
+		self.ui.cardQuestion.setStyleSheet("border: 0")
+		fontMet = QFontMetrics(self.centralwidget.font())
+		height = fontMet.height()
+		message = f"You timed out with {self.functions.i}/{len(self.functions.questions)} answered, and {self.functions.numright} correct. Hit enter to quit."
+		numLines = (fontMet.horizontalAdvance(message)//150)+1
+		self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 10)
+		self.ui.cardQuestion.text.setText(message)
 		self.functions.inPractice = False
 
 	
