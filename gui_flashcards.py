@@ -52,21 +52,8 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		
 		self.ui.gridLayout_3.addLayout(self.grid, 0, 0)
 		
-		# adds a cardQuestion textEdit for word wrapping, instead of QLabel
-		self.ui.cardAnswer.setStyleSheet("""QPushButton {border-image: url(assets/decks.png)}""")
-		self.ui.cardQuestion.setText("")
-		self.ui.cardQuestion.text = QTextEdit(self.ui.cardQuestion)
-		self.ui.cardQuestion.text.setMouseTracking(False)
-		self.ui.cardQuestion.text.setMaximumHeight(25)
-		self.ui.cardQuestion.text.viewport().setAutoFillBackground(False)
-		self.ui.cardQuestion.text.setAlignment(Qt.AlignCenter)
-		self.ui.cardQuestion.text.setTextInteractionFlags(Qt.NoTextInteraction)
-		self.ui.cardQuestion.setLayout(QVBoxLayout(self.ui.cardQuestion))
-		self.ui.cardQuestion.layout().setAlignment(Qt.AlignCenter)
-		self.ui.cardQuestion.layout().addStretch()
-		self.ui.cardQuestion.layout().addWidget(self.ui.cardQuestion.text)
-		self.ui.cardQuestion.layout().addStretch()
-		
+		self.ui.cardAnswer.setStyleSheet("""background-color: black""")
+	
 		self.ui.buttonDel.clicked.connect(lambda: self.confirmDialog(self.deleteCollection, "delete this collection"))
 		self.ui.buttonAdd.clicked.connect(self.addDialog)
 		self.ui.buttonRem.clicked.connect(self.remDialog)
@@ -136,7 +123,6 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		
 	def practiceInProgress(self): # starts off a deck cycle, passes on to both handlePractice and handleInput
 		self.functions.practice(self.ui, self.handleTimeout) 
-		
 		if len(self.functions.questions) == 0:
 			self.error("This is an empty deck!")
 		else:
@@ -149,13 +135,6 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 				self.ui.numWrong.setText("Wrong: ")
 				self.ui.timerDisplay.display("--:--")
 				self.uncheckAll()
-				self.ui.cardQuestion.setStyleSheet(""" QPushButton {
-				border-image: url("assets/decks.png")}
-				QTextEdit {
-				border: 0;
-				background-color: rgba(0, 0, 0, 0);
-				color: black;}
-				""")
 				self.functions.inPractice = True
 				self.handlePractice(self.functions.i)
 				self.ui.revPractice.setChecked(False)
@@ -171,12 +150,12 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		try:
 			self.functions.currentQuestion = self.functions.questions[i]
 			self.functions.currentAnswer = self.functions.answers[i]
-			fontMet = QFontMetrics(self.ui.tabWidget.font())
-			height = fontMet.height()
-			numLines = (fontMet.horizontalAdvance(self.functions.currentQuestion)//150)+1
-			self.ui.cardQuestion.text.setMaximumHeight(height * numLines + height)
-			self.ui.cardQuestion.text.setText(self.functions.currentQuestion)
-			self.ui.cardQuestion.text.setAlignment(Qt.AlignCenter)
+			
+			self.createPage("""QPushButton {background-color: blue; border-radius: 15px} QTextEdit {color: white; border: 0; background-color: blue}""", self.functions.currentQuestion, 1)
+			self.createPage("""QPushButton {background-color: green; border-radius: 15px} QTextEdit {color: white; border: 0; background-color: green}""", self.functions.currentAnswer, 2)
+			self.createPage("""QPushButton {background-color: red; border-radius: 15px} QTextEdit {color: white; border: 0; background-color: red}""", self.functions.currentAnswer, 3)
+			
+			self.ui.stackedWidget.setCurrentIndex(1)
 		except IndexError:
 			self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
 			if self.percentageRight < 70:
@@ -189,42 +168,66 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 				self.message = "Terrific Job!"
 			else:
 				self.message = "Perfect!"
-			self.ui.cardQuestion.setStyleSheet("border: 0")
-			fontMet = QFontMetrics(self.ui.tabWidget.font())
-			height = fontMet.height()
 			finished = f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message} \nHit enter to quit."
-			numLines = (fontMet.horizontalAdvance(finished)//150)+1
-			self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 15)
-			self.ui.cardQuestion.text.setText(finished)
+			self.createPage("", finished, 1)
+			self.ui.stackedWidget.setCurrentIndex(1)
 			self.functions.timer.stop()
 			self.functions.inPractice = False
-
+			
+	def createPage(self, styleSheet, text, index):
+		try:
+			self.ui.stackedWidget.removeWidget(self.ui.stackedWidget.widget(index))
+			self.ui.stackedWidget.widget(index).deleteLater()
+		except:
+			pass
+		self.btn = QPushButton()
+		
+		self.btn.text = QTextEdit(self.btn)
+		self.btn.text.setMouseTracking(False)
+		
+		fontMet = QFontMetrics(self.ui.tabWidget.font())
+		height = fontMet.height()
+		numLines = (fontMet.horizontalAdvance(text)//150) + 1
+		
+		self.btn.text.setMaximumHeight(height * numLines + height)
+		self.btn.text.viewport().setAutoFillBackground(False)
+		self.btn.text.setText(text)
+		self.btn.text.setAlignment(Qt.AlignCenter)
+		self.btn.text.setTextInteractionFlags(Qt.NoTextInteraction)
+		
+		self.btn.setLayout(QVBoxLayout(self.btn))
+		self.btn.layout().setAlignment(Qt.AlignCenter)
+		self.btn.layout().addStretch()
+		self.btn.layout().addWidget(self.btn.text)
+		self.btn.layout().addStretch()
+		
+		self.btn.setStyleSheet(styleSheet)
+		self.ui.stackedWidget.insertWidget(index, self.btn)
+		
 	def handleInput(self, inputO): # checks input, responds accordingly
-		if self.functions.inPractice and not self.functions.gotWrong: 
+		if self.functions.inPractice and self.functions.progress:
+			self.ui.cardAnswer.clear()
+			self.functions.progress = False
+			self.handlePractice(self.functions.i)
+		elif self.functions.inPractice and not self.functions.progress: 
+			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(1))), 1)
+			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(2))), 2)
+			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(3))), 3)	
+			self.ui.stackedWidget.setCurrentIndex(1)
 			if inputO.lower() == self.functions.currentAnswer:
 				self.functions.numright += 1
 				self.ui.numRight.setText(f"Right: {self.functions.numright}")
+				self.flippingAnimation(2)
 				self.ui.cardAnswer.clear()
+				self.functions.progress = True
 				self.functions.i += 1
-				self.ui.handlePractice(self.functions.i)
+				
 			elif inputO.lower() != self.functions.currentAnswer:
-				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")		
-				self.ui.cardQuestion.setStyleSheet("border: 0; color: white")
-				fontMet = QFontMetrics(self.ui.tabWidget.font())
-				height = fontMet.height()
-				message = f"Incorrect! The answer is '{self.ui.functions.currentAnswer}.'"
-				numLines = (fontMet.horizontalAdvance(message)//150)+1
-				self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 15)
-				self.ui.cardQuestion.text.setText(message)
-				self.ui.cardQuestion.text.setAlignment(Qt.AlignCenter)
-				self.functions.gotWrong = True
-				self.functions.i += 1					
-		elif self.functions.inPractice:
-			self.ui.cardAnswer.clear()
-			self.functions.gotWrong = False
-			self.ui.cardQuestion.setStyleSheet("""QPushButton {border-image: url(assets/decks.png)}
-			QTextEdit {border: 0; background: rgba(0, 0, 0, 0); color: black}""")
-			self.handlePractice(self.functions.i)
+				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")
+				self.flippingAnimation(3)
+				self.cardAnswer.clear()
+				self.functions.progress = True
+				self.functions.i += 1			
 		else:
 			self.ui.tabWidget.setTabVisible(0, True)	
 			self.ui.tabWidget.setTabVisible(2, True)		
@@ -242,7 +245,62 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 15)
 		self.ui.cardQuestion.text.setText(message)
 		self.functions.inPractice = False
-
+		
+	def createImages(self, pixmap, index): # creates a pixmap image for both the front and back of the cards
+		self.face = pixmap
+		
+		self.rounded = QPixmap(self.face.size())
+		self.rounded.fill(QColor("transparent"))
+		painter = QPainter(self.rounded)
+		painter.setRenderHint(QPainter.Antialiasing)
+		painter.setBrush(QBrush(self.face))
+		painter.setPen(Qt.NoPen)
+		painter.drawRoundedRect(self.face.rect(), 15, 15)
+		
+		self.ui.stackedWidget.widget(index).deleteLater()
+		self.ui.stackedWidget.removeWidget(self.ui.stackedWidget.widget(index))
+		self.ui.stackedWidget.insertWidget(index, QLabel())
+		self.ui.stackedWidget.widget(index).setPixmap(self.rounded)
+		self.ui.stackedWidget.widget(index).setScaledContents(True)
+			
+	def flippingAnimation(self, index):
+		self.shrink = QPropertyAnimation(self.ui.stackedWidget, b"size")
+		self.shrink.setEndValue(QSize(0, 267))
+		self.shrink.setEasingCurve(QEasingCurve.InOutCubic)
+		self.shrink.setDuration(750)
+		
+		self.moveMid = QPropertyAnimation(self.ui.stackedWidget, b"pos")
+		self.moveMid.setEndValue(QPoint(self.ui.stackedWidget.geometry().x()+100, self.ui.stackedWidget.geometry().y()))
+		self.moveMid.setEasingCurve(QEasingCurve.InOutCubic)
+		self.moveMid.setDuration(750)
+		self.moveMid.finished.connect(lambda: self.ui.stackedWidget.setCurrentIndex(index))
+		
+		self.flipBack = QParallelAnimationGroup()
+		self.flipBack.addAnimation(self.shrink)
+		self.flipBack.addAnimation(self.moveMid)
+	
+		self.expand = QPropertyAnimation(self.ui.stackedWidget, b"size")
+		self.expand.setEasingCurve(QEasingCurve.InOutCubic)
+		self.expand.setStartValue(QSize(0, 267))
+		self.expand.setEndValue(QSize(200, 267))
+		self.expand.setDuration(750)
+		
+		self.moveBack = QPropertyAnimation(self.ui.stackedWidget, b"pos")
+		self.moveBack.setEasingCurve(QEasingCurve.InOutCubic)
+		self.moveBack.setStartValue(QPoint(self.ui.stackedWidget.geometry().x()+100, self.ui.stackedWidget.geometry().y()))
+		self.moveBack.setEndValue(QPoint(self.ui.stackedWidget.geometry().x(), self.ui.stackedWidget.geometry().y()))
+		self.moveBack.setDuration(750)
+		
+		self.flipForward = QParallelAnimationGroup()
+		self.flipForward.addAnimation(self.expand)
+		self.flipForward.addAnimation(self.moveBack)
+		
+		self.fullFlip = QSequentialAnimationGroup()
+		self.fullFlip.addAnimation(self.flipBack)
+		self.fullFlip.addAnimation(self.flipForward)
+		
+		self.fullFlip.start()
+		
 	
 	# HANDLES TABLEVIEW on TAB 3
 	

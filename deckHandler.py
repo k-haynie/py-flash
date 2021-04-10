@@ -16,7 +16,7 @@ class deckHandler():
 		self.inPractice = False # response-directing flag
 		self.reverseTrue = False
 		self.timed = False
-		self.gotWrong = False
+		self.progress = False
 		self.count = 0
 		self.timer = QTimer()
 		
