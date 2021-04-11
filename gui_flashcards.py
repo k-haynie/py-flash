@@ -13,24 +13,26 @@ import tableviewLogic
 import shutil, sys, csv, os, json
 
 
-class executeGUI(QMainWindow, Ui_MainWindow):
-	def __init__(self, parent=None):
-		super(executeGUI, self).__init__(parent)
-		self.mainW = QMainWindow(self)
+class executeGUI():
+	def __init__(self):
+		app = QApplication(sys.argv)
+		app.setStyle("Fusion")
+		app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
+		
+		self.mainW = QMainWindow()
+		self.ui = Ui_MainWindow()		
+		self.ui.setupUi(self.mainW)	
+		
 		self.functions = deckHandler()
 		self.dropdown = dropdown()
 		self.grid = FlowLayout()
-		self.ui = self
-		self.setupUi(self)
-		self.setupSlots()
-		self.retrievePrefs()
-		# app = QApplication(sys.argv)		
-		# self.ui = Ui_MainWindow()		
-		# self.ui.setupUi(self.mainW)		
-		# self.mainW.show()
-		# sys.exit(app.exec_())
 		
-	def setupSlots(self):
+		self.setupSlots()
+		self.retrievePrefs()	
+		self.mainW.show()
+		sys.exit(app.exec_())
+		
+	def setupSlots(self): # handles slots and beginning processes
 		self.selectionDisplay()
 		self.createInit([])
 		self.ui.tabWidget.setCurrentIndex(0)
@@ -38,7 +40,9 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		self.ui.pushButton.clicked.connect(self.practiceInProgress)
 		self.ui.pushButton.setDisabled(True)
 		
-		self.ui.cardAnswer.installEventFilter(self)
+		self.ui.discardPile.stackUnder(self.ui.stackedWidget)
+		self.ui.stackedWidget.setMinimumSize(0, 0)
+		self.ui.lineEdit.returnPressed.connect(lambda: self.handleInput(self.ui.lineEdit.text().strip()))
 		
 		self.ui.toolButton_2.clicked.connect(self.settings)
 		self.ui.importButton.clicked.connect(lambda: tableviewLogic.importing(self.ui.tab_3, self.ui, self.deleteSelection, self.selectionDisplay))
@@ -51,8 +55,6 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		self.ui.comboBox.currentIndexChanged.connect(lambda: self.loadSelection(self.ui.comboBox.currentText()))
 		
 		self.ui.gridLayout_3.addLayout(self.grid, 0, 0)
-		
-		self.ui.cardAnswer.setStyleSheet("""background-color: black""")
 	
 		self.ui.buttonDel.clicked.connect(lambda: self.confirmDialog(self.deleteCollection, "delete this collection"))
 		self.ui.buttonAdd.clicked.connect(self.addDialog)
@@ -61,16 +63,6 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		self.ui.buttonAdd.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirOpenIcon))
 		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirClosedIcon))
 		self.ui.deckDelBtn.hide()
-		
-	def eventFilter(self, widget, event):
-		if (event.type() == QEvent.KeyPress and widget == self.ui.cardAnswer):
-			key = event.key()
-			if key == Qt.Key_Enter:
-				self.handleInput(self.ui.cardAnswer.toPlainText().strip())
-			elif key == Qt.Key_Return:
-				self.handleInput(self.ui.cardAnswer.toPlainText().strip())
-			return QWidget.eventFilter(self, widget, event)
-		return QWidget.eventFilter(self, widget, event)
 		
 	def selectionDisplay(self): # dynamically initializes deck choies 
 		self.ui.groupBox.hide()
@@ -109,6 +101,7 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 	
 	# HANDLES PRACTICE
 	
+	
 	def practiceFlags(self, name, state):
 		if name == "reverse":
 			if state == 0:
@@ -127,6 +120,8 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 			self.error("This is an empty deck!")
 		else:
 			try:
+				self.ui.discardPile.widget(1).deleteLater()
+				self.ui.discardPile.removeWidget(self.ui.discardPile.widget(1))
 				self.ui.tabWidget.setTabVisible(1, True)
 				self.ui.tabWidget.setCurrentIndex(1)
 				self.ui.tabWidget.setTabVisible(0, False)
@@ -151,10 +146,11 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 			self.functions.currentQuestion = self.functions.questions[i]
 			self.functions.currentAnswer = self.functions.answers[i]
 			
-			self.createPage("""QPushButton {background-color: blue; border-radius: 15px} QTextEdit {color: white; border: 0; background-color: blue}""", self.functions.currentQuestion, 1)
-			self.createPage("""QPushButton {background-color: green; border-radius: 15px} QTextEdit {color: white; border: 0; background-color: green}""", self.functions.currentAnswer, 2)
-			self.createPage("""QPushButton {background-color: red; border-radius: 15px} QTextEdit {color: white; border: 0; background-color: red}""", self.functions.currentAnswer, 3)
-			
+			self.createPage("""QPushButton {background-color: blue; border-radius: 15px; border-width: 3px; border-style: solid; border-color: white;} QTextEdit {color: white; border: 0; background-color: blue}""", self.functions.currentQuestion, 1)
+			self.createPage("""QPushButton {background-color: green; border-radius: 15px; border-width: 3px; border-style: solid; border-color: white;} QTextEdit {color: white; border: 0; background-color: green}""", self.functions.currentAnswer, 2)
+			self.createPage("""QPushButton {background-color: red; border-radius: 15px; border-width: 3px; border-style: solid; border-color: white;} QTextEdit {color: white; border: 0; background-color: red}""", self.functions.currentAnswer, 3)
+			self.functions.inAnimation = True
+			self.fadeIn()
 			self.ui.stackedWidget.setCurrentIndex(1)
 		except IndexError:
 			self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
@@ -168,8 +164,8 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 				self.message = "Terrific Job!"
 			else:
 				self.message = "Perfect!"
-			finished = f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message} \nHit enter to quit."
-			self.createPage("", finished, 1)
+			finished = f"You finished with {str(self.functions.numright)} ({self.percentageRight}%) cards correct. {self.message} Hit enter to quit."
+			self.createPage("border: 0", finished, 1)
 			self.ui.stackedWidget.setCurrentIndex(1)
 			self.functions.timer.stop()
 			self.functions.inPractice = False
@@ -205,45 +201,44 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		self.ui.stackedWidget.insertWidget(index, self.btn)
 		
 	def handleInput(self, inputO): # checks input, responds accordingly
-		if self.functions.inPractice and self.functions.progress:
-			self.ui.cardAnswer.clear()
-			self.functions.progress = False
-			self.handlePractice(self.functions.i)
-		elif self.functions.inPractice and not self.functions.progress: 
+		if self.functions.inAnimation:
+			print("passing")
+			pass
+		elif self.functions.inPractice: 
+			self.functions.inAnimation = True
+			print("creating images")
 			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(1))), 1)
 			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(2))), 2)
 			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(3))), 3)	
 			self.ui.stackedWidget.setCurrentIndex(1)
+			
 			if inputO.lower() == self.functions.currentAnswer:
 				self.functions.numright += 1
 				self.ui.numRight.setText(f"Right: {self.functions.numright}")
+				self.mainW.setMinimumSize(self.mainW.size())
+				self.mainW.setMaximumSize(self.mainW.size())
 				self.flippingAnimation(2)
-				self.ui.cardAnswer.clear()
-				self.functions.progress = True
-				self.functions.i += 1
 				
 			elif inputO.lower() != self.functions.currentAnswer:
 				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")
+				self.mainW.setMinimumSize(self.mainW.size())
+				self.mainW.setMaximumSize(self.mainW.size())
 				self.flippingAnimation(3)
-				self.cardAnswer.clear()
-				self.functions.progress = True
-				self.functions.i += 1			
+				
+			self.ui.lineEdit.clear()
+			self.functions.i += 1			
 		else:
 			self.ui.tabWidget.setTabVisible(0, True)	
 			self.ui.tabWidget.setTabVisible(2, True)		
 			self.ui.tabWidget.setCurrentIndex(0)
-			self.ui.cardAnswer.clear()
+			self.ui.lineEdit.clear()
 			self.ui.tabWidget.setTabVisible(1, False)
 			self.functions = deckHandler()
 			
 	def handleTimeout(self):
-		self.ui.cardQuestion.setStyleSheet("border: 0")
-		fontMet = QFontMetrics(self.ui.tabWidget.font())
-		height = fontMet.height()
 		message = f"You timed out with {self.functions.i}/{len(self.functions.questions)} answered, and {self.functions.numright} correct. Hit enter to quit."
-		numLines = (fontMet.horizontalAdvance(message)//150)+1
-		self.ui.cardQuestion.text.setMaximumHeight(height * numLines + 15)
-		self.ui.cardQuestion.text.setText(message)
+		self.createPage("border: 0", message, 1)
+		self.ui.stackedWidget.setCurrentIndex(1)
 		self.functions.inPractice = False
 		
 	def createImages(self, pixmap, index): # creates a pixmap image for both the front and back of the cards
@@ -266,13 +261,13 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 	def flippingAnimation(self, index):
 		self.shrink = QPropertyAnimation(self.ui.stackedWidget, b"size")
 		self.shrink.setEndValue(QSize(0, 267))
-		self.shrink.setEasingCurve(QEasingCurve.InOutCubic)
-		self.shrink.setDuration(750)
+		self.shrink.setEasingCurve(QEasingCurve.InCubic)
+		self.shrink.setDuration(400)
 		
 		self.moveMid = QPropertyAnimation(self.ui.stackedWidget, b"pos")
 		self.moveMid.setEndValue(QPoint(self.ui.stackedWidget.geometry().x()+100, self.ui.stackedWidget.geometry().y()))
-		self.moveMid.setEasingCurve(QEasingCurve.InOutCubic)
-		self.moveMid.setDuration(750)
+		self.moveMid.setEasingCurve(QEasingCurve.InCubic)
+		self.moveMid.setDuration(400)
 		self.moveMid.finished.connect(lambda: self.ui.stackedWidget.setCurrentIndex(index))
 		
 		self.flipBack = QParallelAnimationGroup()
@@ -280,33 +275,71 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		self.flipBack.addAnimation(self.moveMid)
 	
 		self.expand = QPropertyAnimation(self.ui.stackedWidget, b"size")
-		self.expand.setEasingCurve(QEasingCurve.InOutCubic)
+		self.expand.setEasingCurve(QEasingCurve.OutCubic)
 		self.expand.setStartValue(QSize(0, 267))
 		self.expand.setEndValue(QSize(200, 267))
-		self.expand.setDuration(750)
+		self.expand.setDuration(400)
 		
 		self.moveBack = QPropertyAnimation(self.ui.stackedWidget, b"pos")
-		self.moveBack.setEasingCurve(QEasingCurve.InOutCubic)
+		self.moveBack.setEasingCurve(QEasingCurve.OutCubic)
 		self.moveBack.setStartValue(QPoint(self.ui.stackedWidget.geometry().x()+100, self.ui.stackedWidget.geometry().y()))
 		self.moveBack.setEndValue(QPoint(self.ui.stackedWidget.geometry().x(), self.ui.stackedWidget.geometry().y()))
-		self.moveBack.setDuration(750)
+		self.moveBack.setDuration(400)
 		
 		self.flipForward = QParallelAnimationGroup()
 		self.flipForward.addAnimation(self.expand)
 		self.flipForward.addAnimation(self.moveBack)
 		
+		self.slide = QPropertyAnimation(self.ui.stackedWidget, b"pos")
+		self.slide.setStartValue(QPoint(self.ui.stackedWidget.geometry().x(), self.ui.stackedWidget.geometry().y()))
+		self.slide.setEndValue(QPoint(self.ui.discardPile.geometry().x(), self.ui.discardPile.geometry().y()))
+		self.slide.setEasingCurve(QEasingCurve.InOutCubic)
+		self.slide.setDuration(500)
+		self.slide.finished.connect(self.resetSlide)
+
 		self.fullFlip = QSequentialAnimationGroup()
 		self.fullFlip.addAnimation(self.flipBack)
 		self.fullFlip.addAnimation(self.flipForward)
+		self.fullFlip.addAnimation(self.slide)
 		
 		self.fullFlip.start()
+	
+	def turnOffAnimation(self):
+		self.functions.inAnimation = False
+		self.mainW.setMaximumSize(16777215, 16777215)
+		self.mainW.setMinimumSize(600, 500)
+	
+	def resetSlide(self):
+		self.functions.inAnimation = False
+		self.mainW.setMaximumSize(16777215, 16777215)
+		self.mainW.setMinimumSize(600, 500)
+		try:
+			self.ui.discardPile.widget(1).deleteLater()
+			self.ui.discardPile.removeWidget(self.ui.discard.widget(1))
+		except:
+			pass
+		self.ui.discardPile.insertWidget(1, self.ui.stackedWidget.currentWidget())
+		self.ui.discardPile.setCurrentIndex(1)	
+		self.ui.stackedWidget.setCurrentIndex(0)
+		self.ui.lineEdit.clear()
+		self.handlePractice(self.functions.i)
 		
+	def fadeIn(self):
+		self.effect = QGraphicsOpacityEffect(self.ui.stackedWidget)
+		self.ui.stackedWidget.setGraphicsEffect(self.effect)
+		self.grow = QPropertyAnimation(self.effect, b"opacity")
+		self.grow.setStartValue(0)
+		self.grow.setEndValue(1)
+		self.grow.setDuration(400)
+		self.grow.start()
+		self.grow.finished.connect(self.turnOffAnimation)
+	
 	
 	# HANDLES TABLEVIEW on TAB 3
 	
 		
 	def error(self, message): # easy to customize, will reuse throughout
-		self.win = QMessageBox(self)
+		self.win = QMessageBox(self.mainW)
 		self.win.setText(message) 
 		self.win.setIcon(QMessageBox.Warning)
 		self.win.setWindowTitle("Warning")
@@ -352,7 +385,7 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 	
 	
 	def settings(self): # handles the settings widget
-		self.inherit = QDialog(self)
+		self.inherit = QDialog(self.mainW)
 		self.window = Ui_Dialog()
 		self.window.setupUi(self.inherit)
 		if qApp.palette().color(QPalette.Background).name() == "#d3d3d3":
@@ -436,7 +469,7 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		self.ui.tabWidget.setTabVisible(0, True)	
 		self.ui.tabWidget.setTabVisible(2, True)		
 		self.ui.tabWidget.setCurrentIndex(0)
-		self.ui.cardAnswer.clear()
+		self.ui.lineEdit.clear()
 		self.functions.timer.stop()
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.functions = deckHandler()
@@ -461,7 +494,7 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 			model.layoutChanged.emit()
 		
 	def confirmDialog(self, method, action, tableData=0, model=0):
-		confirmWindow = QMessageBox(self)
+		confirmWindow = QMessageBox(self.mainW)
 		confirmWindow.setText(f"Are you sure you want to {action}?")
 		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
 		confirmWindow.setIcon(QMessageBox.Warning)
@@ -602,7 +635,7 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 		dlg.setDirectory("Decks/")		
 		
 	def createDialog(self, options, method):
-		self.fd = QDialog(self)
+		self.fd = QDialog(self.mainW)
 		self.fdinst = Ui_Options()
 		self.fdinst.setupUi(self.fd)
 		optionModel = QStandardItemModel()
@@ -663,12 +696,3 @@ class executeGUI(QMainWindow, Ui_MainWindow):
 			self.ui.comboBox.currentIndexChanged.connect(lambda: self.loadSelection(self.ui.comboBox.currentText()))
 			x = list(data.keys()).index(realName)
 			self.ui.comboBox.setCurrentIndex(x)
-
-def main():
-	app = QApplication(sys.argv)
-	app.setStyle("Fusion")
-	app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
-	win = executeGUI()
-	win.show()
-	sys.exit(app.exec_())
-	
