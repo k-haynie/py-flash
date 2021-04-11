@@ -202,11 +202,9 @@ class executeGUI():
 		
 	def handleInput(self, inputO): # checks input, responds accordingly
 		if self.functions.inAnimation:
-			print("passing")
 			pass
 		elif self.functions.inPractice: 
 			self.functions.inAnimation = True
-			print("creating images")
 			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(1))), 1)
 			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(2))), 2)
 			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(3))), 3)	
@@ -365,22 +363,22 @@ class executeGUI():
 		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
 		self.ui.inputName.setMaxLength(50)
 		
-		# self.cancelBtnShown(self.tableData)
+		self.ui.pushButton_2.setDisabled(True)
 		self.ui.practiceCancelBtn.clicked.connect(lambda: self.confirmDialog(self.cancelPractice, "cancel your practice"))
 		self.ui.deckDelBtn.clicked.connect(lambda: self.confirmDialog(tableviewLogic.deleteDeck, "delete this deck", tableData, self.model))
-		self.table.model().dataChanged.connect(lambda: print("Changed!"))
+		self.model.layoutChanged.connect(lambda: self.cancelBtnShown(self.model))
 		
 		# cosmetics
 		self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 		self.table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 			
-	def cancelBtnShown(self, tableData):
-		if tableData == [["",""]]:
-			self.ui.pushButton_2.setDisabled(True)
-		else:
+	def cancelBtnShown(self, model):
+		if model.verticalHeader: 
 			self.ui.pushButton_2.setDisabled(False)
+		else:
+			self.ui.pushButton_2.setDisabled(True)
 		
-	
+
 	# COSMETICS
 	
 	
@@ -388,11 +386,9 @@ class executeGUI():
 		self.inherit = QDialog(self.mainW)
 		self.window = Ui_Dialog()
 		self.window.setupUi(self.inherit)
-		if qApp.palette().color(QPalette.Background).name() == "#d3d3d3":
+		if str(qApp.styleSheet()).find("color: rgb(255, 255, 255)") == 148:
 			self.window.radioButton_2.setChecked(True)
-		elif qApp.palette().color(QPalette.Background).name() == "#191919":
-			self.window.radioButton.setChecked(True)
-		elif qApp.palette().color(QPalette.Background).name() == "#f0f0f0":
+		elif str(qApp.styleSheet()).find("color: rgb(255, 255, 255)") == 8:
 			self.window.radioButton.setChecked(True)
 		if self.ui.tabWidget.font().pointSize() == 10:
 			self.window.radioButton_4.setChecked(True)
@@ -406,6 +402,7 @@ class executeGUI():
 		self.window.radioButton_3.clicked.connect(lambda: self.savePrefs(1, "tinytext"))
 		self.window.radioButton_4.clicked.connect(self.normaltext)
 		self.window.radioButton_4.clicked.connect(lambda: self.savePrefs(1, "normaltext"))
+		self.inherit.setModal(True)
 		self.inherit.show()
 		
 	def darkmode(self): # sets palette with dark values
@@ -475,11 +472,12 @@ class executeGUI():
 		self.functions = deckHandler()
 		
 	def cancelCreation(self, tableData, model): # clears the Q/A model
-		confirmWindow = QMessageBox(self)
+		confirmWindow = QMessageBox(self.ui.tab_3)
 		confirmWindow.setText("Are you sure you want to cancel?")
 		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
 		confirmWindow.setIcon(QMessageBox.Warning)
 		confirmWindow.setWindowTitle("Confirm")
+		confirmWindow.setModal(True)
 		confirmWindow.setDefaultButton(QMessageBox.No)
 		proceed = confirmWindow.exec_()
 		if proceed == QMessageBox.Yes:
@@ -499,6 +497,7 @@ class executeGUI():
 		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
 		confirmWindow.setIcon(QMessageBox.Warning)
 		confirmWindow.setWindowTitle("Confirm")
+		confirmWindow.setModal(True)
 		confirmWindow.setDefaultButton(QMessageBox.No)
 		proceed = confirmWindow.exec_()
 		if tableData != 0 and proceed == QMessageBox.Yes:
@@ -636,6 +635,7 @@ class executeGUI():
 		
 	def createDialog(self, options, method):
 		self.fd = QDialog(self.mainW)
+		self.fd.setModal(True)
 		self.fdinst = Ui_Options()
 		self.fdinst.setupUi(self.fd)
 		optionModel = QStandardItemModel()
