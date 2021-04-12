@@ -34,33 +34,33 @@ def creation(tableData, model, ui, error, deleteSelection, selectionDisplay): # 
 		pass
 	else:		
 		if ui.createButton.text() == "Save":
-			fileWrite(deckname, tableData)
 			ui.createButton.setText("Create")
-			tableData.clear()
-			ui.inputName.clear()
-			model.verticalHeader = False
-			tableData.append(["", ""])
-			ui.tableView.setShowGrid(False)
-			model.layoutChanged.emit()
+			handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection)
 		else:
 			if inputName == "":
 				error("You need to name your deck!")
+			elif inputName == ".csv":
+				error("You cannot name your deck after a file type!")
 			elif inputName + ".csv" in os.listdir("Decks"):
 				error("This deck already exists!")
 			else:
-				fileWrite(deckname, tableData)
-				tableData.clear()
-				model.verticaHeader = False
-				tableData.append(["",""])
-				ui.tableView.setShowGrid(False)
-				ui.inputName.clear()
 				model.layoutChanged.emit()
-				deleteSelection()
-				selectionDisplay()
+				handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection)
 				ui.tabWidget.setCurrentIndex(0)
 				ui.comboBox.setCurrentIndex(0)
 		ui.inputName.setReadOnly(False)
 		ui.deckDelBtn.hide()
+			
+def handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection):
+	fileWrite(deckname, tableData)
+	tableData.clear()
+	ui.inputName.clear()
+	model.verticalHeader = False
+	tableData.append(["",""])
+	ui.tableView.setShowGrid(False)
+	model.layoutChanged.emit()
+	deleteSelection()
+	selectionDisplay()
 			
 def fileWrite(deckname, tabledata): # actually writes the files edited/produced in the interface
 	try:
@@ -109,7 +109,7 @@ def loadToEdit(tableData, model, ui, dropdown, error): # creates and returns lis
 		impFile = ""
 		if filedir.exec_():
 			impFile = filedir.selectedFiles()
-		realName = os.path.split(impFile[0])[1].split(".csv")[0]
+		realName = os.path.split(impFile[0])[1][::-1].replace("vsc.", "", 1)[::-1]
 		subName = "Decks/" + realName + ".csv"
 
 		ui.createButton.setText("Save")

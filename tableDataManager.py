@@ -35,8 +35,8 @@ class tableModeling(QtCore.QAbstractTableModel):
 			return True
 	
 	def flags(self, index):
-		if self.verticalHeader:
-			return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+		if not self.verticalHeader:
+			return Qt.NoItemFlags
 		else:
-			return  Qt.NoItemFlags
+			return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 		

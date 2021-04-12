@@ -1,16 +1,26 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+import os
 					
 def createOption(i, ui, grid, responseHandler): # creates a deck image for each deck
 	ui.newCheckBox = QPushButton()
 	ui.newCheckBox.setCheckable(True)
-	ui.newCheckBox.setStyleSheet("""
-		QPushButton {
-		border-image: url("assets/decks.png");
-		color: rgb(0,0,0);}
-		QPushButton:checked {
-		border-image: url("assets/decks_selected.png");}
-		""")
+	fileSize = os.stat(f"Decks/{i}").st_size
+	if fileSize > 0:
+		ui.newCheckBox.setStyleSheet("""
+			QPushButton {
+			border-image: url("assets/decks.png");
+			color: rgb(0,0,0);}
+			QPushButton:checked {
+			border-image: url("assets/decks_selected.png");}
+			""")
+	else:
+		ui.newCheckBox.setStyleSheet("""
+			QPushButton {
+			border-image: url("assets/decks_empty.png");
+			color: rgb(0,0,0);}
+			""")
+		ui.newCheckBox.setDisabled(True)
 	originalName = (str(i)[::-1].replace("vsc.", "", 1))[::-1] # for a deck named .csv.csv 
 	spacedName = originalName.split(" ")
 	realName = produceName(spacedName, ui)
