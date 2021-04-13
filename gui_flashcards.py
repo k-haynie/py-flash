@@ -36,6 +36,7 @@ class executeGUI():
 		self.selectionDisplay()
 		self.createInit([])
 		self.ui.tabWidget.setCurrentIndex(0)
+		self.ui.tabWidget.setTabEnabled(1, False)
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.ui.pushButton.clicked.connect(self.practiceInProgress)
 		self.ui.pushButton.setDisabled(True)
@@ -53,6 +54,7 @@ class executeGUI():
 		self.dropdown.loadOptions(self.ui) # initializes a list in the drop-down menu
 		self.ui.comboBox.setMaxVisibleItems(5)
 		self.ui.comboBox.currentIndexChanged.connect(lambda: self.loadSelection(self.ui.comboBox.currentText()))
+		self.ui.comboBox.setSizeAdjustPolicy(2)
 		
 		self.ui.gridLayout_3.addLayout(self.grid, 0, 0)
 	
@@ -120,11 +122,17 @@ class executeGUI():
 			self.error("This is an empty deck!")
 		else:
 			try:
-				self.ui.discardPile.widget(1).deleteLater()
-				self.ui.discardPile.removeWidget(self.ui.discardPile.widget(1))
+				try:
+					self.ui.discardPile.widget(1).deleteLater()
+					self.ui.discardPile.removeWidget(self.ui.discardPile.widget(1))
+				except:
+					pass
+				self.ui.tabWidget.setTabEnabled(1, True)
 				self.ui.tabWidget.setTabVisible(1, True)
 				self.ui.tabWidget.setCurrentIndex(1)
+				self.ui.tabWidget.setTabEnabled(0, False)
 				self.ui.tabWidget.setTabVisible(0, False)
+				self.ui.tabWidget.setTabEnabled(2, False)
 				self.ui.tabWidget.setTabVisible(2, False)
 				self.ui.numRight.setText("Right: ")
 				self.ui.numWrong.setText("Wrong: ")
@@ -210,14 +218,14 @@ class executeGUI():
 			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(3))), 3)	
 			self.ui.stackedWidget.setCurrentIndex(1)
 			
-			if inputO.lower() == self.functions.currentAnswer:
+			if inputO.lower() == self.functions.currentAnswer.lower():
 				self.functions.numright += 1
 				self.ui.numRight.setText(f"Right: {self.functions.numright}")
 				self.mainW.setMinimumSize(self.mainW.size())
 				self.mainW.setMaximumSize(self.mainW.size())
 				self.flippingAnimation(2)
 				
-			elif inputO.lower() != self.functions.currentAnswer:
+			elif inputO.lower() != self.functions.currentAnswer.lower():
 				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")
 				self.mainW.setMinimumSize(self.mainW.size())
 				self.mainW.setMaximumSize(self.mainW.size())
@@ -226,18 +234,22 @@ class executeGUI():
 			self.ui.lineEdit.clear()
 			self.functions.i += 1			
 		else:
+			self.ui.tabWidget.setTabEnabled(0, True)
 			self.ui.tabWidget.setTabVisible(0, True)	
+			self.ui.tabWidget.setTabEnabled(2, True)
 			self.ui.tabWidget.setTabVisible(2, True)		
 			self.ui.tabWidget.setCurrentIndex(0)
 			self.ui.lineEdit.clear()
+			self.ui.tabWidget.setTabEnabled(1, False)
 			self.ui.tabWidget.setTabVisible(1, False)
 			self.functions = deckHandler()
 			
 	def handleTimeout(self):
-		message = f"You timed out with {self.functions.i}/{len(self.functions.questions)} answered, and {self.functions.numright} correct. Hit enter to quit."
-		self.createPage("border: 0", message, 1)
-		self.ui.stackedWidget.setCurrentIndex(1)
-		self.functions.inPractice = False
+		if self.functions.inPractice:
+			message = f"You timed out with {self.functions.i}/{len(self.functions.questions)} answered, and {self.functions.numright} correct. Hit enter to quit."
+			self.createPage("border: 0", message, 1)
+			self.ui.stackedWidget.setCurrentIndex(1)
+			self.functions.inPractice = False
 		
 	def createImages(self, pixmap, index): # creates a pixmap image for both the front and back of the cards
 		self.face = pixmap
@@ -463,11 +475,14 @@ class executeGUI():
 	
 	
 	def cancelPractice(self): # cancels a practicing session, resets deckHandler instance
-		self.ui.tabWidget.setTabVisible(0, True)	
+		self.ui.tabWidget.setTabEnabled(0, True)
+		self.ui.tabWidget.setTabVisible(0, True)
+		self.ui.tabWidget.setTabEnabled(2, True)	
 		self.ui.tabWidget.setTabVisible(2, True)		
 		self.ui.tabWidget.setCurrentIndex(0)
 		self.ui.lineEdit.clear()
 		self.functions.timer.stop()
+		self.ui.tabWidget.setTabEnabled(1, False)
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.functions = deckHandler()
 		

@@ -33,14 +33,14 @@ class deckHandler():
 						reader = csv.reader(f, delimiter=",")
 						for row in reader:
 							self.questions.append(row[0])
-							self.answers.append(row[1].lower().strip())
+							self.answers.append(row[1].strip())
 					f.close()
 				except IndexError:
 					with open(i, encoding='utf-8') as f:
 						reader = csv.reader(f, delimiter="	")
 						for row in reader:
 							self.questions.append(row[0])
-							self.answers.append(row[1].lower().strip())
+							self.answers.append(row[1].strip())
 					f.close()
 					self.questions.pop(0)
 			# tsv files have a ANSWER\t at index[0]... weird
@@ -49,14 +49,14 @@ class deckHandler():
 					with open(i, encoding='utf-8') as f:
 						reader = csv.reader(f, delimiter=",")
 						for row in reader:
-							self.answers.append(row[0].lower().strip())
+							self.answers.append(row[0].strip())
 							self.questions.append(row[1])
 					f.close()
 				except IndexError:
 					with open(i, encoding='utf-8') as f:
 						reader = csv.reader(f, delimiter="	")
 						for row in reader:
-							self.answers.append(row[0].lower().strip())
+							self.answers.append(row[0].strip())
 							self.questions.append(row[1])
 					f.close()
 					self.questions.pop(0)
@@ -77,11 +77,10 @@ class deckHandler():
 		self.timer.start(1000)
 	
 	def timeChange(self, ui, handleTimeout):
+		self.count -= 1
+		mm = self.count // 60
+		ss = self.count % 60
+		ui.timerDisplay.display(f"{mm:02}:{ss:02}")
 		if self.count == 0:
 			self.timer.stop()
 			handleTimeout()
-		else:
-			self.count -= 1
-			mm = self.count // 60
-			ss = self.count % 60
-			ui.timerDisplay.display(f"{mm:02}:{ss:02}")
