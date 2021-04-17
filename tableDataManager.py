@@ -1,5 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
+from PyQt5.QtCore import *
 
 class tableModeling(QtCore.QAbstractTableModel):
 	def __init__(self, tableData, parent=None):
@@ -36,7 +37,7 @@ class tableModeling(QtCore.QAbstractTableModel):
 	
 	def flags(self, index):
 		if not self.verticalHeader:
-			return Qt.NoItemFlags
+			return QAbstractItemModel.flags(self, index) & ~Qt.ItemIsEnabled
 		else:
 			return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 		

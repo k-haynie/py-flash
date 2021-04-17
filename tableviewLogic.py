@@ -53,12 +53,8 @@ def creation(tableData, model, ui, error, deleteSelection, selectionDisplay): # 
 			
 def handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection):
 	fileWrite(deckname, tableData)
-	tableData.clear()
 	ui.inputName.clear()
-	model.verticalHeader = False
-	tableData.append(["",""])
-	ui.tableView.setShowGrid(False)
-	model.layoutChanged.emit()
+	clearModel(tableData, model, ui)
 	deleteSelection()
 	selectionDisplay()
 			
@@ -132,9 +128,7 @@ def loadToEdit(tableData, model, ui, dropdown, error): # creates and returns lis
 					elif "\t" in j: # splits tsv data into an app-readable format
 						newLine.append(j.split("\t"))
 		if newLine == [] and reformat == []:
-			tableData.append(["",""])
-			model.verticalHeader = False
-			ui.tableView.setShowGrid(False)
+			clearModel(tableData, model, ui)
 		elif len(newLine) != len(reformat):
 			for i in reformat:
 				tableData.append(i)
@@ -157,9 +151,7 @@ def addRow(tableData, model, ui): # adds a row in the Create interface
 	ref = ui.tableView.selectionModel().currentIndex().row()+1
 	after = []
 	if len(tableData) == 0:
-		tableData.append(["",""])
-		model.verticalHeader = False
-		ui.tableView.setShowGrid(False)
+		clearModel(tableData, model, ui)
 	elif len(tableData) == 1 and not model.verticalHeader:
 		model.verticalHeader = True
 		ui.tableView.setShowGrid(True)
@@ -180,11 +172,7 @@ def addRow(tableData, model, ui): # adds a row in the Create interface
 	
 def removeRow(tableData, model, ui): # removes a row in the Create interface
 	if len(tableData) == 1:
-		tableData.pop()
-		tableData.append(["",""])
-		ui.tableView.setShowGrid(False)
-		model.verticalHeader = False
-		model.layoutChanged.emit()
+		clearModel(tableData, model, ui)
 	else:
 		ref = ui.tableView.selectionModel().currentIndex().row()
 		try:
@@ -202,11 +190,7 @@ def deleteDeck(tableData, model, ui): # deletes
 	ui.inputName.setReadOnly(False)
 	ui.deckDelBtn.hide()
 	ui.createButton.setText("Create")
-	tableData.clear()
-	model.verticalHeader = False
-	tableData.append(["",""])
-	ui.tableView.setShowGrid(False)
-	model.layoutChanged.emit()
+	clearModel(tableData, model, ui)
 	
 	with open("collections.txt", "r+", encoding="utf-8") as collections:
 		data = json.load(collections)
@@ -222,3 +206,12 @@ def deleteDeck(tableData, model, ui): # deletes
 	collections.close()
 	ui.comboBox.setCurrentIndex(-1)
 	ui.comboBox.setCurrentIndex(0)
+	
+def clearModel(tableData, model, ui):
+	tableData.clear()
+	model.verticalHeader = False
+	tableData.append(["",""])
+	ui.tableView.setShowGrid(False)
+	ui.tableView.clearSelection()
+	model.layoutChanged.emit()
+	ui.tableView.selectionModel().clear()
