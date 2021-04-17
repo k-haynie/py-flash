@@ -382,7 +382,9 @@ class executeGUI():
 		
 		# cosmetics
 		self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+		self.table.horizontalHeader().setSectionsClickable(False)
 		self.table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+		self.table.verticalHeader().setSectionsClickable(False)
 			
 	def cancelBtnShown(self, model):
 		if model.verticalHeader: 

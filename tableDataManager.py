@@ -26,7 +26,7 @@ class tableModeling(QtCore.QAbstractTableModel):
 				return ["Questions", "Answers"][section]
 			if orientation == Qt.Vertical:
 				if len(self.tableData) == 1 and not self.verticalHeader:
-					return "  "
+					return "#"
 				else:
 					return (str(section+1))
 				
