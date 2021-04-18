@@ -151,16 +151,16 @@ class executeGUI():
 
 	def handlePractice(self, i): # fetches the answer from the functional module, prints to the textBrowser
 		try:
-			self.functions.currentQuestion = self.functions.questions[i]
-			self.functions.currentAnswer = self.functions.answers[i]
-			
-			self.createPage("""QPushButton {background-color: blue; border-radius: 15px; border-width: 3px; border-style: solid; border-color: white;} QTextEdit {color: white; border: 0; background-color: blue}""", self.functions.currentQuestion, 1)
-			self.createPage("""QPushButton {background-color: green; border-radius: 15px; border-width: 3px; border-style: solid; border-color: white;} QTextEdit {color: white; border: 0; background-color: green}""", self.functions.currentAnswer, 2)
-			self.createPage("""QPushButton {background-color: red; border-radius: 15px; border-width: 3px; border-style: solid; border-color: white;} QTextEdit {color: white; border: 0; background-color: red}""", self.functions.currentAnswer, 3)
-			self.functions.inAnimation = True
-			self.fadeIn()
-			self.ui.stackedWidget.setCurrentIndex(1)
+			if self.functions.inPractice:
+				self.functions.currentQuestion = self.functions.questions[i]
+				self.functions.currentAnswer = self.functions.answers[i]
+				
+				self.createPage("""QPushButton {border-image: url("assets/card_front.png")} QTextEdit {color: white; border: 0; background-color: rgba(0, 0, 0, 0)}""", self.functions.currentQuestion, 1)
+				self.createPage("""QPushButton {border-image: url("assets/card_right.png")} QTextEdit {color: white; border: 0; background-color: rgba(0, 0, 0, 0)}""", self.functions.currentAnswer, 2)
+				self.createPage("""QPushButton {border-image: url("assets/card_wrong.png")} QTextEdit {color: white; border: 0; background-color: rgba(0, 0, 0, 0)}""", self.functions.currentAnswer, 3)
+				self.ui.stackedWidget.setCurrentIndex(1)
 		except IndexError:
+			self.functions.inPractice = False
 			self.percentageRight = round(self.functions.numright/len(self.functions.questions) * 100, 2)
 			if self.percentageRight < 70:
 				self.message = "You should practice these cards more."
@@ -176,7 +176,6 @@ class executeGUI():
 			self.createPage("border: 0", finished, 1)
 			self.ui.stackedWidget.setCurrentIndex(1)
 			self.functions.timer.stop()
-			self.functions.inPractice = False
 			
 	def createPage(self, styleSheet, text, index):
 		try:
@@ -218,17 +217,20 @@ class executeGUI():
 			self.createImages(QPixmap(QWidget.grab(self.ui.stackedWidget.widget(3))), 3)	
 			self.ui.stackedWidget.setCurrentIndex(1)
 			
+			
 			if inputO.lower() == self.functions.currentAnswer.lower():
 				self.functions.numright += 1
 				self.ui.numRight.setText(f"Right: {self.functions.numright}")
 				self.mainW.setMinimumSize(self.mainW.size())
 				self.mainW.setMaximumSize(self.mainW.size())
+				self.createImages(self.ui.stackedWidget.widget(2).pixmap(), 0, True)
 				self.flippingAnimation(2)
 				
 			elif inputO.lower() != self.functions.currentAnswer.lower():
 				self.ui.numWrong.setText(f"Wrong: {self.functions.i - self.functions.numright + 1}")
 				self.mainW.setMinimumSize(self.mainW.size())
 				self.mainW.setMaximumSize(self.mainW.size())
+				self.createImages(self.ui.stackedWidget.widget(3).pixmap(), 0, True)
 				self.flippingAnimation(3)
 				
 			self.ui.lineEdit.clear()
@@ -245,13 +247,13 @@ class executeGUI():
 			self.functions = deckHandler()
 			
 	def handleTimeout(self):
-		if self.functions.inPractice:
+		if not self.functions.inAnimation:
+			self.functions.inPractice = False
 			message = f"You timed out with {self.functions.i}/{len(self.functions.questions)} answered, and {self.functions.numright} correct. Hit enter to quit."
 			self.createPage("border: 0", message, 1)
 			self.ui.stackedWidget.setCurrentIndex(1)
-			self.functions.inPractice = False
 		
-	def createImages(self, pixmap, index): # creates a pixmap image for both the front and back of the cards
+	def createImages(self, pixmap, index, proceed=False): # creates a pixmap image for both the front and back of the cards
 		self.face = pixmap
 		
 		self.rounded = QPixmap(self.face.size())
@@ -260,13 +262,22 @@ class executeGUI():
 		painter.setRenderHint(QPainter.Antialiasing)
 		painter.setBrush(QBrush(self.face))
 		painter.setPen(Qt.NoPen)
-		painter.drawRoundedRect(self.face.rect(), 15, 15)
+		painter.drawRoundedRect(self.face.rect(), 35, 35)
 		
-		self.ui.stackedWidget.widget(index).deleteLater()
-		self.ui.stackedWidget.removeWidget(self.ui.stackedWidget.widget(index))
-		self.ui.stackedWidget.insertWidget(index, QLabel())
-		self.ui.stackedWidget.widget(index).setPixmap(self.rounded)
-		self.ui.stackedWidget.widget(index).setScaledContents(True)
+		if proceed == False:
+			self.ui.stackedWidget.widget(index).deleteLater()
+			self.ui.stackedWidget.removeWidget(self.ui.stackedWidget.widget(index))
+			self.ui.stackedWidget.insertWidget(index, QLabel())
+			self.ui.stackedWidget.widget(index).setPixmap(self.rounded)
+			self.ui.stackedWidget.widget(index).setScaledContents(True)
+		else:
+			self.newImageCont = QLabel(self.ui.tab_2)
+			self.newImageCont.setAutoFillBackground(False)
+			self.newImageCont.setMinimumHeight(267)
+			self.newImageCont.setMinimumWidth(200)
+			self.newImageCont.setStyleSheet("QLabel {border-radius: 35px}")
+			self.newImageCont.setPixmap(self.rounded)
+			self.newImageCont.setScaledContents(True)
 			
 	def flippingAnimation(self, index):
 		self.shrink = QPropertyAnimation(self.ui.stackedWidget, b"size")
@@ -299,18 +310,22 @@ class executeGUI():
 		self.flipForward = QParallelAnimationGroup()
 		self.flipForward.addAnimation(self.expand)
 		self.flipForward.addAnimation(self.moveBack)
+		self.flipForward.finished.connect(self.newImageCont.show)
+		self.flipForward.finished.connect(self.newCard)
 		
-		self.slide = QPropertyAnimation(self.ui.stackedWidget, b"pos")
+		self.slide = QPropertyAnimation(self.newImageCont, b"pos")
 		self.slide.setStartValue(QPoint(self.ui.stackedWidget.geometry().x(), self.ui.stackedWidget.geometry().y()))
 		self.slide.setEndValue(QPoint(self.ui.discardPile.geometry().x(), self.ui.discardPile.geometry().y()))
 		self.slide.setEasingCurve(QEasingCurve.InOutCubic)
 		self.slide.setDuration(500)
 		self.slide.finished.connect(self.resetSlide)
+		
 
 		self.fullFlip = QSequentialAnimationGroup()
 		self.fullFlip.addAnimation(self.flipBack)
 		self.fullFlip.addAnimation(self.flipForward)
 		self.fullFlip.addAnimation(self.slide)
+		self.fullFlip.finished.connect(self.turnOffAnimation)
 		
 		self.fullFlip.start()
 	
@@ -320,29 +335,18 @@ class executeGUI():
 		self.mainW.setMinimumSize(600, 500)
 	
 	def resetSlide(self):
-		self.functions.inAnimation = False
-		self.mainW.setMaximumSize(16777215, 16777215)
-		self.mainW.setMinimumSize(600, 500)
 		try:
 			self.ui.discardPile.widget(1).deleteLater()
 			self.ui.discardPile.removeWidget(self.ui.discard.widget(1))
 		except:
 			pass
-		self.ui.discardPile.insertWidget(1, self.ui.stackedWidget.currentWidget())
-		self.ui.discardPile.setCurrentIndex(1)	
+		self.ui.discardPile.insertWidget(1, self.newImageCont)
+		self.ui.discardPile.setCurrentIndex(1)
+		
+	def newCard(self):
 		self.ui.stackedWidget.setCurrentIndex(0)
 		self.ui.lineEdit.clear()
 		self.handlePractice(self.functions.i)
-		
-	def fadeIn(self):
-		self.effect = QGraphicsOpacityEffect(self.ui.stackedWidget)
-		self.ui.stackedWidget.setGraphicsEffect(self.effect)
-		self.grow = QPropertyAnimation(self.effect, b"opacity")
-		self.grow.setStartValue(0)
-		self.grow.setEndValue(1)
-		self.grow.setDuration(400)
-		self.grow.start()
-		self.grow.finished.connect(self.turnOffAnimation)
 	
 	
 	# HANDLES TABLEVIEW on TAB 3
