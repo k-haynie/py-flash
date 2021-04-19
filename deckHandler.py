@@ -83,4 +83,4 @@ class deckHandler():
 		ui.timerDisplay.display(f"{mm:02}:{ss:02}")
 		if self.count == 0:
 			self.timer.stop()
-			handleTimeout()
+			handleTimeout(self, ui)
