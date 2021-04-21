@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
 import os
 					
 def createOption(i, ui, grid, responseHandler): # creates a deck image for each deck

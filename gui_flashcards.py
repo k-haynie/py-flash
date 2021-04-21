@@ -4,9 +4,9 @@ from settings_flashcards import Ui_Dialog
 from new_flashcards_again import Ui_MainWindow
 from deckHandler import deckHandler
 from flow_layout import FlowLayout
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import * 
+from PyQt6.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import * 
 from fileDialog import Ui_Options
 import loadDecks
 import tableviewLogic
@@ -18,7 +18,6 @@ class executeGUI():
 	def __init__(self):
 		app = QApplication(sys.argv)
 		app.setStyle("Fusion")
-		app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
 		
 		self.mainW = QMainWindow()
 		self.ui = Ui_MainWindow()		
@@ -31,7 +30,7 @@ class executeGUI():
 		self.setupSlots()
 		self.retrievePrefs()	
 		self.mainW.show()
-		sys.exit(app.exec_())
+		sys.exit(app.exec())
 		
 	def setupSlots(self): # handles slots and beginning processes
 		self.selectionDisplay()
@@ -47,7 +46,7 @@ class executeGUI():
 		self.ui.lineEdit.returnPressed.connect(lambda: practice.handleInput(self.ui.lineEdit.text().strip(), self.ui, self.functions, self.mainW, deckHandler, self))
 		
 		self.ui.toolButton_2.clicked.connect(self.settings)
-		self.ui.importButton.clicked.connect(lambda: tableviewLogic.importing(self.ui.tab_3, self.ui, self.deleteSelection, self.selectionDisplay))
+		self.ui.importButton.clicked.connect(lambda: tableviewLogic.importing(self.ui.tab_3, self.ui, self.deleteSelection, self.selectionDisplay, self.error))
 		self.ui.pushButton_3.clicked.connect(self.creationStarted)
 		self.ui.revPractice.stateChanged.connect(lambda state: practice.practiceFlags("reverse", state, self.functions))
 		self.ui.timedPractice.stateChanged.connect(lambda state: practice.practiceFlags("timed", state, self.functions))
@@ -55,16 +54,16 @@ class executeGUI():
 		self.dropdown.loadOptions(self.ui) # initializes a list in the drop-down menu
 		self.ui.comboBox.setMaxVisibleItems(5)
 		self.ui.comboBox.currentIndexChanged.connect(lambda: self.loadSelection(self.ui.comboBox.currentText()))
-		self.ui.comboBox.setSizeAdjustPolicy(2)
+		self.ui.comboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
 		
 		self.ui.gridLayout_3.addLayout(self.grid, 0, 0)
 	
 		self.ui.buttonDel.clicked.connect(lambda: self.confirmDialog(self.deleteCollection, "delete this collection"))
 		self.ui.buttonAdd.clicked.connect(self.addDialog)
 		self.ui.buttonRem.clicked.connect(self.remDialog)
-		self.ui.buttonDel.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_TrashIcon))
-		self.ui.buttonAdd.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirOpenIcon))
-		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DirClosedIcon))
+		self.ui.buttonDel.setIcon(QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon))
+		self.ui.buttonAdd.setIcon(QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_DirOpenIcon))
+		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_DirClosedIcon))
 		self.ui.deckDelBtn.hide()
 		
 	def selectionDisplay(self): # dynamically initializes deck choies 
@@ -101,6 +100,7 @@ class executeGUI():
 			except AttributeError:
 				pass	
 	
+	
 	# HANDLES TABLEVIEW on TAB 3
 	
 		
@@ -109,7 +109,7 @@ class executeGUI():
 		self.win.setText(message) 
 		self.win.setIcon(QMessageBox.Warning)
 		self.win.setWindowTitle("Warning")
-		self.win.exec_()
+		self.win.exec()
 		
 	def createInit(self, tableData): # initializes the create tab
 		# initialization
@@ -137,9 +137,9 @@ class executeGUI():
 		self.model.layoutChanged.connect(lambda: self.cancelBtnShown(self.model))
 		
 		# cosmetics
-		self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+		self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 		self.table.horizontalHeader().setSectionsClickable(False)
-		self.table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+		self.table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 		self.table.verticalHeader().setSectionsClickable(False)
 			
 	def cancelBtnShown(self, model):
@@ -156,9 +156,9 @@ class executeGUI():
 		self.inherit = QDialog(self.mainW)
 		self.window = Ui_Dialog()
 		self.window.setupUi(self.inherit)
-		if str(qApp.styleSheet()).find("color: rgb(255, 255, 255)") == 148:
+		if str(QCoreApplication.instance().styleSheet()).find("color: rgb(255, 255, 255)") == 148:
 			self.window.radioButton_2.setChecked(True)
-		elif str(qApp.styleSheet()).find("color: rgb(255, 255, 255)") == 8:
+		elif str(QCoreApplication.instance().styleSheet()).find("color: rgb(255, 255, 255)") == 8:
 			self.window.radioButton.setChecked(True)
 		if self.ui.tabWidget.font().pointSize() == 10:
 			self.window.radioButton_4.setChecked(True)
@@ -199,7 +199,7 @@ class executeGUI():
 		QLineEdit {
 		background-color: rgb(80, 80, 80)}
 		""")
-		qApp.setStyleSheet(f"* {darkSettings}")
+		QCoreApplication.instance().setStyleSheet(f"* {darkSettings}")
 		
 	def lightmode(self): # sets palette with light values
 		lightSettings = ("""{
@@ -220,7 +220,7 @@ class executeGUI():
 		QLineEdit {
 		background-color: rgb(180, 180, 180)}
 		""")
-		qApp.setStyleSheet(f"* {lightSettings}")
+		QCoreApplication.instance().setStyleSheet(f"* {lightSettings}")
 		
 	def tinytext(self): # sets font size 8
 		self.ui.tabWidget.setStyleSheet("* {font-size: 8pt}")
@@ -247,13 +247,13 @@ class executeGUI():
 	def cancelCreation(self, tableData, model): # clears the Q/A model
 		confirmWindow = QMessageBox(self.ui.tab_3)
 		confirmWindow.setText("Are you sure you want to cancel?")
-		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
-		confirmWindow.setIcon(QMessageBox.Warning)
+		confirmWindow.setStandardButtons(QMessageBox.StandardButtons.No | QMessageBox.StandardButtons.Yes)
+		confirmWindow.setIcon(QMessageBox.Icon.Warning)
 		confirmWindow.setWindowTitle("Confirm")
 		confirmWindow.setModal(True)
-		confirmWindow.setDefaultButton(QMessageBox.No)
-		proceed = confirmWindow.exec_()
-		if proceed == QMessageBox.Yes:
+		confirmWindow.setDefaultButton(QMessageBox.StandardButtons.No)
+		proceed = confirmWindow.exec()
+		if proceed == QMessageBox.StandardButtons.Yes:
 			self.ui.inputName.clear()
 			self.ui.inputName.setReadOnly(False)
 			self.ui.deckDelBtn.hide()
@@ -267,15 +267,15 @@ class executeGUI():
 	def confirmDialog(self, method, action, tableData=0, model=0):
 		confirmWindow = QMessageBox(self.mainW)
 		confirmWindow.setText(f"Are you sure you want to {action}?")
-		confirmWindow.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
-		confirmWindow.setIcon(QMessageBox.Warning)
+		confirmWindow.setStandardButtons(QMessageBox.StandardButtons.No | QMessageBox.StandardButtons.Yes)
+		confirmWindow.setIcon(QMessageBox.Icon.Warning)
 		confirmWindow.setWindowTitle("Confirm")
 		confirmWindow.setModal(True)
-		confirmWindow.setDefaultButton(QMessageBox.No)
-		proceed = confirmWindow.exec_()
-		if tableData != 0 and proceed == QMessageBox.Yes:
+		confirmWindow.setDefaultButton(QMessageBox.StandardButtons.No)
+		proceed = confirmWindow.exec()
+		if tableData != 0 and proceed == QMessageBox.StandardButtons.Yes:
 			tableviewLogic.deleteDeck(tableData, model, self.ui)
-		elif proceed == QMessageBox.Yes:
+		elif proceed == QMessageBox.StandardButtons.Yes:
 			method()
 		
 	

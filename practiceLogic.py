@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import * 
+from PyQt6.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import * 
 
 
 def practiceFlags(name, state, functions):
@@ -77,6 +77,7 @@ def handlePractice(i, functions, ui): # fetches the answer from the functional m
 		ui.stackedWidget.setCurrentIndex(1)
 		functions.timer.stop()
 		
+		
 def createPage(styleSheet, text, index, ui):
 	try:
 		ui.stackedWidget.removeWidget(ui.stackedWidget.widget(index))
@@ -95,11 +96,11 @@ def createPage(styleSheet, text, index, ui):
 	btn.text.setMaximumHeight(height * numLines + height)
 	btn.text.viewport().setAutoFillBackground(False)
 	btn.text.setText(text)
-	btn.text.setAlignment(Qt.AlignCenter)
-	btn.text.setTextInteractionFlags(Qt.NoTextInteraction)
+	btn.text.setAlignment(Qt.Alignment.AlignCenter)
+	btn.text.setTextInteractionFlags(Qt.TextInteractionFlags.NoTextInteraction)
 	
 	btn.setLayout(QVBoxLayout(btn))
-	btn.layout().setAlignment(Qt.AlignCenter)
+	btn.layout().setAlignment(btn.layout(), Qt.Alignment.AlignCenter)
 	btn.layout().addStretch()
 	btn.layout().addWidget(btn.text)
 	btn.layout().addStretch()
@@ -143,7 +144,7 @@ def handleInput(inputO, ui, functions, mainW, deckHandler, obj): # checks input,
 		ui.lineEdit.clear()
 		ui.tabWidget.setTabEnabled(1, False)
 		ui.tabWidget.setTabVisible(1, False)
-		functions = deckHandler()
+		obj.functions = deckHandler()
 		
 def handleTimeout(functions, ui):
 	if not functions.inAnimation:
@@ -158,9 +159,9 @@ def createImages(pixmap, index, ui, obj, proceed=False): # creates a pixmap imag
 	obj.rounded = QPixmap(obj.face.size())
 	obj.rounded.fill(QColor("transparent"))
 	obj.painter = QPainter(obj.rounded)
-	obj.painter.setRenderHint(QPainter.Antialiasing)
+	obj.painter.setRenderHint(QPainter.RenderHints.Antialiasing)
 	obj.painter.setBrush(QBrush(obj.face))
-	obj.painter.setPen(Qt.NoPen)
+	obj.painter.setPen(Qt.PenStyle.NoPen)
 	obj.painter.drawRoundedRect(obj.face.rect(), 35, 35)
 	obj.painter.end()
 	
@@ -180,14 +181,25 @@ def createImages(pixmap, index, ui, obj, proceed=False): # creates a pixmap imag
 		ui.newImageCont.setMinimumWidth(200)
 		
 def flippingAnimation(index, ui, functions, mainW, obj):
+	# For some reason, I could not get the setEasingCurve function to work normally on Qt6
+	# so I used the following roundabout way - perhaps that's a bug, but the lack of documentation and 
+	# comprehensive examples is sorely felt
+	
+	inCubic = QEasingCurve()
+	inCubic.setType(QEasingCurve.Type.InCubic)
+	outCubic = QEasingCurve()
+	outCubic.setType(QEasingCurve.Type.OutCubic)
+	inOutCubic = QEasingCurve()
+	inOutCubic.setType(QEasingCurve.Type.InOutCubic)
+	
 	obj.shrink = QPropertyAnimation(ui.stackedWidget, b"size")
 	obj.shrink.setEndValue(QSize(0, 267))
-	obj.shrink.setEasingCurve(QEasingCurve.InCubic)
+	obj.shrink.setEasingCurve(inCubic)
 	obj.shrink.setDuration(400)
 	
 	obj.moveMid = QPropertyAnimation(ui.stackedWidget, b"pos")
 	obj.moveMid.setEndValue(QPoint(ui.stackedWidget.geometry().x()+100, ui.stackedWidget.geometry().y()))
-	obj.moveMid.setEasingCurve(QEasingCurve.InCubic)
+	obj.moveMid.setEasingCurve(inCubic)
 	obj.moveMid.setDuration(400)
 	obj.moveMid.finished.connect(lambda: ui.stackedWidget.setCurrentIndex(index))
 	
@@ -196,13 +208,13 @@ def flippingAnimation(index, ui, functions, mainW, obj):
 	obj.flipBack.addAnimation(obj.moveMid)
 
 	obj.expand = QPropertyAnimation(ui.stackedWidget, b"size")
-	obj.expand.setEasingCurve(QEasingCurve.OutCubic)
+	obj.expand.setEasingCurve(outCubic)
 	obj.expand.setStartValue(QSize(0, 267))
 	obj.expand.setEndValue(QSize(200, 267))
 	obj.expand.setDuration(400)
 	
 	obj.moveBack = QPropertyAnimation(ui.stackedWidget, b"pos")
-	obj.moveBack.setEasingCurve(QEasingCurve.OutCubic)
+	obj.moveBack.setEasingCurve(outCubic)
 	obj.moveBack.setStartValue(QPoint(ui.stackedWidget.geometry().x()+100, ui.stackedWidget.geometry().y()))
 	obj.moveBack.setEndValue(QPoint(ui.stackedWidget.geometry().x(), ui.stackedWidget.geometry().y()))
 	obj.moveBack.setDuration(400)
@@ -216,8 +228,8 @@ def flippingAnimation(index, ui, functions, mainW, obj):
 	obj.slide = QPropertyAnimation(ui.newImageCont, b"pos")
 	obj.slide.setStartValue(QPoint(ui.stackedWidget.geometry().x(), ui.stackedWidget.geometry().y()))
 	obj.slide.setEndValue(QPoint(ui.discardPile.geometry().x(), ui.discardPile.geometry().y()))
-	obj.slide.setEasingCurve(QEasingCurve.InOutCubic)
-	obj.slide.setDuration(5000)
+	obj.slide.setEasingCurve(inOutCubic)
+	obj.slide.setDuration(500)
 	obj.slide.finished.connect(lambda: resetSlide(ui))
 	
 

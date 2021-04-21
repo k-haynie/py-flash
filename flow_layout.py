@@ -61,8 +61,8 @@
 
 import typing
 
-from PyQt5.QtCore import Qt, QPoint, QRect, QSize
-from PyQt5.QtWidgets import QWidget, QLayout, QLayoutItem, QStyle, QSizePolicy
+from PyQt6.QtCore import Qt, QPoint, QRect, QSize
+from PyQt6.QtWidgets import QWidget, QLayout, QLayoutItem, QStyle, QSizePolicy
 
 
 class FlowLayout(QLayout):
@@ -88,13 +88,13 @@ class FlowLayout(QLayout):
         if self.m_hSpace >= 0:
             return self.m_hSpace
         else:
-            return self.smartSpacing(QStyle.PM_LayoutHorizontalSpacing)
+            return self.smartSpacing(QStyle.PixelMetric.PM_LayoutHorizontalSpacing)
 
     def verticalSpacing(self) -> int:
         if self.m_vSpace >= 0:
             return self.m_vSpace
         else:
-            return self.smartSpacing(QStyle.PM_LayoutVerticalSpacing)
+            return self.smartSpacing(QStyle.PixelMetric.PM_LayoutVerticalSpacing)
 
     def count(self) -> int:
         return len(self.itemList)
@@ -112,7 +112,7 @@ class FlowLayout(QLayout):
             return None
 
     def expandingDirections(self) -> Qt.Orientations:
-        return Qt.Orientations(Qt.Orientation(0))
+        return Qt.Orientations(Qt.Orientations(0))
 
     def hasHeightForWidth(self) -> bool:
         return True

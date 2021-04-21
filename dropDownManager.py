@@ -1,5 +1,5 @@
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import *
+from PyQt6 import QtGui
+from PyQt6.QtWidgets import *
 import os
 import json
 

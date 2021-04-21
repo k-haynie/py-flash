@@ -1,23 +1,23 @@
-from PyQt5.QtWidgets import *
+from PyQt6.QtWidgets import *
 import os, shutil, csv, json
 
 # new, modularized version of what had previously been in gui_flashcards.py
 
-def importing(tab, ui, deleteSelection, selectionDisplay): # handles importing a csv file to the app's decks file
+def importing(tab, ui, deleteSelection, selectionDisplay, error): # handles importing a csv file to the app's decks file
 	try:
 		filedir = QFileDialog(tab)
-		filedir.setOption(filedir.DontUseNativeDialog, True)
-		filedir.setFileMode(QFileDialog.ExistingFile)
+		filedir.setOption(filedir.Options.DontUseNativeDialog, True)
+		filedir.setFileMode(QFileDialog.FileMode.ExistingFile)
 		filedir.setNameFilter("CSV files (*.csv)")
 		filedir.setDirectory("C:")
 		impFile = ""
-		if filedir.exec_():
+		if filedir.exec():
 			impFile = filedir.selectedFiles()
 		fromDir = impFile[0] 
 		name = os.path.split(fromDir)[1]			
 		toDir = os.path.abspath("Decks/")
 		if name in os.listdir(toDir):
-			self.error("This file already exists!")
+			error("This file already exists!")
 		else:
 			shutil.copy(fromDir, toDir)			
 			deleteSelection()
@@ -97,13 +97,13 @@ def checkForEmpty(tableData, error):
 def loadToEdit(tableData, model, ui, dropdown, error): # creates and returns lists of the data from a selected file
 	try:
 		filedir = QFileDialog(ui.tab_3)
-		filedir.setOption(filedir.DontUseNativeDialog, True)
-		filedir.setFileMode(QFileDialog.ExistingFile)
+		filedir.setOption(filedir.Options.DontUseNativeDialog, True)
+		filedir.setFileMode(QFileDialog.FileMode.ExistingFile)
 		filedir.setNameFilter("CSV files (*.csv)")
 		filedir.setDirectory("Decks/")
 		filedir.directoryEntered.connect(lambda: dropdown.dirCheck(self.filedir))
 		impFile = ""
-		if filedir.exec_():
+		if filedir.exec():
 			impFile = filedir.selectedFiles()
 		realName = os.path.split(impFile[0])[1][::-1].replace("vsc.", "", 1)[::-1]
 		subName = "Decks/" + realName + ".csv"
