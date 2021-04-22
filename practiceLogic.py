@@ -51,14 +51,13 @@ def practiceInProgress(ui, functions, error, uncheckAll, deckHandler, obj): # st
 
 def handlePractice(i, functions, ui): # fetches the answer from the functional module, prints to the textBrowser
 	try:
-		if functions.inPractice:
-			functions.currentQuestion = functions.questions[i]
-			functions.currentAnswer = functions.answers[i]
-			
-			createPage("""QPushButton {border-image: url("assets/card_front.png")} QTextEdit {color: white; border: 0; background-color: rgba(0, 0, 0, 0)}""", functions.currentQuestion, 1, ui)
-			createPage("""QPushButton {border-image: url("assets/card_right.png")} QTextEdit {color: white; border: 0; background-color: rgba(0, 0, 0, 0)}""", functions.currentAnswer, 2, ui)
-			createPage("""QPushButton {border-image: url("assets/card_wrong.png")} QTextEdit {color: white; border: 0; background-color: rgba(0, 0, 0, 0)}""", functions.currentAnswer, 3, ui)
-			ui.stackedWidget.setCurrentIndex(1)
+		functions.currentQuestion = functions.questions[i]
+		functions.currentAnswer = functions.answers[i]
+		
+		createPage("""QPushButton {border-image: url("assets/card_front.png")} QTextEdit {color: white; border: 0; background-color: rgba(0, 0, 0, 0)}""", functions.currentQuestion, 1, ui)
+		createPage("""QPushButton {border-image: url("assets/card_right.png")} QTextEdit {color: white; border: 0; background-color: rgba(0, 0, 0, 0)}""", functions.currentAnswer, 2, ui)
+		createPage("""QPushButton {border-image: url("assets/card_wrong.png")} QTextEdit {color: white; border: 0; background-color: rgba(0, 0, 0, 0)}""", functions.currentAnswer, 3, ui)
+		ui.stackedWidget.setCurrentIndex(1)
 	except IndexError:
 		functions.inPractice = False
 		percentageRight = round(functions.numright/len(functions.questions) * 100, 2)
@@ -76,8 +75,7 @@ def handlePractice(i, functions, ui): # fetches the answer from the functional m
 		createPage("border: 0", finished, 1, ui)
 		ui.stackedWidget.setCurrentIndex(1)
 		functions.timer.stop()
-		
-		
+
 def createPage(styleSheet, text, index, ui):
 	try:
 		ui.stackedWidget.removeWidget(ui.stackedWidget.widget(index))
@@ -110,7 +108,10 @@ def createPage(styleSheet, text, index, ui):
 	
 def handleInput(inputO, ui, functions, mainW, deckHandler, obj): # checks input, responds accordingly
 	if functions.inAnimation:
-		pass
+		obj.fullFlip.stop()
+		turnOffAnimation(functions, mainW)
+		resetSlide(ui)
+		newCard(ui, functions)
 	elif functions.inPractice: 
 		functions.inAnimation = True
 		createImages(QPixmap(QWidget.grab(ui.stackedWidget.widget(1))), 1, ui, obj)
