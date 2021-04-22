@@ -1,18 +1,17 @@
 from dropDownManager import dropDownModel as dropdown
+from new_flashcards_again import Ui_MainWindow
 from tableDataManager import tableModeling
 from settings_flashcards import Ui_Dialog
-from new_flashcards_again import Ui_MainWindow
 from deckHandler import deckHandler
 from flow_layout import FlowLayout
+from fileDialog import Ui_Options
+import shutil, sys, csv, os, json
+import practiceLogic as practice
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import * 
-from fileDialog import Ui_Options
-import loadDecks
 import tableviewLogic
-import practiceLogic as practice
-import shutil, sys, csv, os, json
-
+import loadDecks
 
 class executeGUI():
 	def __init__(self):
@@ -198,6 +197,11 @@ class executeGUI():
 		background-color: rgb(53, 53, 53)}
 		QLineEdit {
 		background-color: rgb(80, 80, 80)}
+		QCheckBox::indicator {
+		border: 1px solid rgb(255, 255, 255);
+		background: none;}
+		QCheckBox::indicator::checked {
+		background: rgb(255, 255, 255)}
 		""")
 		QCoreApplication.instance().setStyleSheet(f"* {darkSettings}")
 		
@@ -351,6 +355,8 @@ class executeGUI():
 				data = json.load(collections)
 			collections.close()
 			
+			data[colName].sort(key=str.lower)
+			
 			for i in data[colName]:
 				loadDecks.createOption(i, self.ui, self.grid, self.checked)
 			self.ui.groupBox.show()
@@ -414,8 +420,14 @@ class executeGUI():
 		optionModel = QStandardItemModel()
 		optionModel.setColumnCount(1)
 		for i in options:
-			optionModel.appendRow(QStandardItem(QIcon("assets/decks.png"), i))
+			if os.stat(f"Decks/{i}").st_size != 0:
+				optionModel.appendRow(QStandardItem(QIcon("assets/decks.png"), i))
+			else:
+				optionModel.appendRow(QStandardItem(QIcon("assets/decks_empty.png"), i))
 		self.fdinst.listView.setModel(optionModel)
+		self.fdinst.listView.setTextElideMode(Qt.TextElideMode.ElideRight)
+		self.fdinst.listView.setIconSize(QSize(30, 40))
+		self.fdinst.listView.setGridSize(QSize(0, 50))
 		self.fd.show()
 		self.fd.accepted.connect(lambda: method(self.fdinst.listView.currentIndex().data()))
 		
