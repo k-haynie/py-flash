@@ -47,6 +47,8 @@ class executeGUI():
 		self.ui.toolButton_2.clicked.connect(self.settings)
 		self.ui.importButton.clicked.connect(lambda: tableviewLogic.importing(self.ui.tab_3, self.ui, self.deleteSelection, self.selectionDisplay, self.error))
 		self.ui.pushButton_3.clicked.connect(self.creationStarted)
+		self.ui.DeleteSelection.clicked.connect(lambda: self.confirmDialog(self.delSelection, "delete this selection"))
+		self.ui.DeleteSelection.setDisabled(True)
 		self.ui.revPractice.stateChanged.connect(lambda state: practice.practiceFlags("reverse", state, self.functions))
 		self.ui.timedPractice.stateChanged.connect(lambda state: practice.practiceFlags("timed", state, self.functions))
 		
@@ -64,6 +66,12 @@ class executeGUI():
 		self.ui.buttonAdd.setIcon(QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_DirOpenIcon))
 		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_DirClosedIcon))
 		self.ui.deckDelBtn.hide()
+		
+	def delSelection(self):
+		for i in self.functions.decksToPractice:
+			os.remove(f"Decks/{i}")
+		index = self.ui.comboBox.currentText()
+		self.loadSelection(index) 
 		
 	def selectionDisplay(self): # dynamically initializes deck choies 
 		self.ui.groupBox.hide()
@@ -88,8 +96,10 @@ class executeGUI():
 				self.functions.decksToPractice.remove(str(name))
 		if self.functions.decksToPractice == []:
 			self.ui.pushButton.setDisabled(True)
+			self.ui.DeleteSelection.setDisabled(True)
 		else:
 			self.ui.pushButton.setDisabled(False)
+			self.ui.DeleteSelection.setDisabled(False)
 			
 	def uncheckAll(self):
 		for i in range(0, self.grid.count()):
