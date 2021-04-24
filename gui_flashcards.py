@@ -51,6 +51,7 @@ class executeGUI():
 		self.ui.DeleteSelection.setDisabled(True)
 		self.ui.revPractice.stateChanged.connect(lambda state: practice.practiceFlags("reverse", state, self.functions))
 		self.ui.timedPractice.stateChanged.connect(lambda state: practice.practiceFlags("timed", state, self.functions))
+		self.ui.selectAll.clicked.connect(self.selectAll)
 		
 		self.dropdown.loadOptions(self.ui) # initializes a list in the drop-down menu
 		self.ui.comboBox.setMaxVisibleItems(5)
@@ -67,14 +68,27 @@ class executeGUI():
 		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_DirClosedIcon))
 		self.ui.deckDelBtn.hide()
 		
-	def delSelection(self):
+	def delSelection(self): # removes selected decks
 		for i in self.functions.decksToPractice:
 			os.remove(f"Decks/{i}")
 		index = self.ui.comboBox.currentText()
 		self.loadSelection(index) 
 		
+	def selectAll(self): # selects alternating all/none decks on the screen
+		for i in range(self.grid.count()):
+			if self.ui.selectAll.text() == "Select All":
+				if self.grid.itemAt(i).widget().isEnabled():
+					self.grid.itemAt(i).widget().setChecked(True)
+			else:
+				self.grid.itemAt(i).widget().setChecked(False)		
+		if self.ui.selectAll.text() == "Select All":
+			self.ui.selectAll.setText("Select None")
+		else:
+			self.ui.selectAll.setText("Select All")
+		
 	def selectionDisplay(self): # dynamically initializes deck choies 
 		self.ui.groupBox.hide()
+		self.ui.selectAll.setText("Select All")
 		self.f = []
 		try:
 			if os.listdir("Decks") == []:
@@ -109,6 +123,11 @@ class executeGUI():
 			except AttributeError:
 				pass	
 	
+	def pluralSelected(self):
+		if len(self.functions.decksToPractice) == 1:
+			return ["this deck", "it"]
+		else:
+			return ["at least one of these decks", "them"]
 	
 	# HANDLES TABLEVIEW on TAB 3
 	
@@ -116,7 +135,7 @@ class executeGUI():
 	def error(self, message): # easy to customize, will reuse throughout
 		self.win = QMessageBox(self.mainW)
 		self.win.setText(message) 
-		self.win.setIcon(QMessageBox.Warning)
+		self.win.setIcon(QMessageBox.Icon.Warning)
 		self.win.setWindowTitle("Warning")
 		self.win.exec()
 		
@@ -136,7 +155,7 @@ class executeGUI():
 		self.ui.addButton.clicked.connect(lambda: tableviewLogic.addRow(self.tableData, self.model, self.ui))
 		self.ui.removeButton.clicked.connect(lambda: tableviewLogic.removeRow(self.tableData, self.model, self.ui))
 		self.ui.createButton.clicked.connect(lambda: tableviewLogic.creation(self.tableData, self.model, self.ui, self.error, self.deleteSelection, self.selectionDisplay))
-		self.ui.editButton.clicked.connect(lambda: tableviewLogic.loadToEdit(tableData, self.model, self.ui, self.dropdown, self.error))
+		self.ui.editButton.clicked.connect(lambda: tableviewLogic.loadToEdit(tableData, self.model, self.ui, self.dropdown, self.error, self))
 		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
 		self.ui.inputName.setMaxLength(50)
 		
@@ -354,6 +373,7 @@ class executeGUI():
 		self.uncheckAll()
 		self.deleteSelection()
 		self.ui.groupBox.hide()
+		self.ui.selectAll.setText("Select All")
 		if self.dropdown.creationInProgress == True:
 			pass
 		elif self.ui.comboBox.currentIndex() == -1:

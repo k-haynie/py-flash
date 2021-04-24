@@ -20,7 +20,7 @@ class deckHandler():
 		self.inAnimation = False
 		self.timer = QTimer()
 		
-	def practice(self, ui, handleTimeout): 
+	def practice(self, ui, handleTimeout, error): 
 		deckDirs = []
 		
 		for i in self.decksToPractice:
@@ -43,6 +43,7 @@ class deckHandler():
 							self.answers.append(row[1].strip())
 					f.close()
 					self.questions.pop(0)
+					
 			# tsv files have a ANSWER\t at index[0]... weird
 			else:
 				try:

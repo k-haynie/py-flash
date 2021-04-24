@@ -94,27 +94,24 @@ def checkForEmpty(tableData, error):
 		error(f"{row[0]} {nums} {row[1]}")
 		return False
 		
-def loadToEdit(tableData, model, ui, dropdown, error): # creates and returns lists of the data from a selected file
+def loadToEdit(tableData, model, ui, dropdown, error, obj): # creates and returns lists of the data from a selected file
 	try:
 		filedir = QFileDialog(ui.tab_3)
 		filedir.setOption(filedir.Options.DontUseNativeDialog, True)
 		filedir.setFileMode(QFileDialog.FileMode.ExistingFile)
 		filedir.setNameFilter("CSV files (*.csv)")
 		filedir.setDirectory("Decks/")
-		filedir.directoryEntered.connect(lambda: dropdown.dirCheck(self.filedir))
+		filedir.directoryEntered.connect(lambda: obj.dirCheck(self.filedir))
 		impFile = ""
 		if filedir.exec():
 			impFile = filedir.selectedFiles()
 		realName = os.path.split(impFile[0])[1][::-1].replace("vsc.", "", 1)[::-1]
 		subName = "Decks/" + realName + ".csv"
-
-		ui.createButton.setText("Save")
-		model.verticalHeader = True
-		ui.tableView.setShowGrid(True)
-		tableData.clear()
+		
+		clearModel(tableData, model, ui)
 		reformat = []
 		newLine = []
-		
+	
 		with open(subName, "r", newline="", encoding="utf-8") as f:
 			fileReader = csv.reader(f, delimiter=",")
 			for line in fileReader:
@@ -127,6 +124,7 @@ def loadToEdit(tableData, model, ui, dropdown, error): # creates and returns lis
 						newLine.append(j.split(","))
 					elif "\t" in j: # splits tsv data into an app-readable format
 						newLine.append(j.split("\t"))
+		tableData.pop()
 		if newLine == [] and reformat == []:
 			clearModel(tableData, model, ui)
 		elif len(newLine) != len(reformat):
@@ -136,7 +134,10 @@ def loadToEdit(tableData, model, ui, dropdown, error): # creates and returns lis
 			for i in newLine:
 				tableData.append(i)
 				
-		model.layoutChanged.emit()
+		ui.createButton.setText("Save")
+		model.verticalHeader = True
+		model.layoutChanged.emit()	
+		ui.tableView.setShowGrid(True)			
 		ui.inputName.setText(realName)
 		ui.inputName.setReadOnly(True)	
 		ui.deckDelBtn.show()			

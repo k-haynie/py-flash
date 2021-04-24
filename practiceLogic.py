@@ -16,38 +16,38 @@ def practiceFlags(name, state, functions):
 			functions.timed = True
 	
 def practiceInProgress(ui, functions, error, uncheckAll, deckHandler, obj): # starts off a deck cycle, passes on to both handlePractice and handleInput
-	functions.practice(ui, handleTimeout) 
-	if len(functions.questions) == 0:
-		error("This is an empty deck!")
-	else:
+	try:
 		try:
-			try:
-				ui.newImageCont.deleteLater()
-				ui.discardPile.widget(1).deleteLater()
-				ui.discardPile.removeWidget(ui.discardPile.widget(1))
-			except:
-				pass
-			ui.tabWidget.setTabEnabled(1, True)
-			ui.tabWidget.setTabVisible(1, True)
-			ui.tabWidget.setCurrentIndex(1)
-			ui.tabWidget.setTabEnabled(0, False)
-			ui.tabWidget.setTabVisible(0, False)
-			ui.tabWidget.setTabEnabled(2, False)
-			ui.tabWidget.setTabVisible(2, False)
-			ui.numRight.setText("Right: ")
-			ui.numWrong.setText("Wrong: ")
-			ui.timerDisplay.display("--:--")
-			uncheckAll()
-			functions.inPractice = True
-			handlePractice(functions.i, functions, ui)
-			ui.revPractice.setChecked(False)
-			ui.timedPractice.setChecked(False)
-		except IndexError:	
-			error("There is an issue with this deck. Try editing it in the \"Create\" tab.")
-			obj.functions = deckHandler()
-		except UnicodeDecodeError:
-			error("There is an issue with this deck. Try editing it in the \"Create\" tab.")
-			obj.functions = deckHandler()
+			ui.newImageCont.deleteLater()
+			ui.discardPile.widget(1).deleteLater()
+			ui.discardPile.removeWidget(ui.discardPile.widget(1))
+		except:
+			pass
+		ui.selectAll.setText("Select All")
+		ui.tabWidget.setTabEnabled(1, True)
+		ui.tabWidget.setTabVisible(1, True)
+		functions.practice(ui, handleTimeout, error)		
+		ui.tabWidget.setCurrentIndex(1)
+		ui.tabWidget.setTabEnabled(0, False)
+		ui.tabWidget.setTabVisible(0, False)
+		ui.tabWidget.setTabEnabled(2, False)
+		ui.tabWidget.setTabVisible(2, False)
+		ui.numRight.setText("Right: ")
+		ui.numWrong.setText("Wrong: ")
+		ui.timerDisplay.display("--:--")
+		uncheckAll()
+		functions.inPractice = True
+		handlePractice(functions.i, functions, ui)
+		ui.revPractice.setChecked(False)
+		ui.timedPractice.setChecked(False)
+	except (IndexError, UnicodeDecodeError):	
+		error(f"There is an issue with {obj.pluralSelected()[0]}. Try editing {obj.pluralSelected()[1]} in the \"Create\" tab.")
+		obj.functions = deckHandler()
+		obj.uncheckAll()
+	except Exception:
+		error("Something went wrong!")
+		obj.functions = deckHandler()
+		obj.uncheckAll()
 
 def handlePractice(i, functions, ui): # fetches the answer from the functional module, prints to the textBrowser
 	try:
@@ -89,7 +89,7 @@ def createPage(styleSheet, text, index, ui):
 	
 	fontMet = QFontMetrics(ui.tabWidget.font())
 	height = fontMet.height()
-	numLines = (fontMet.horizontalAdvance(text)//150) + 1
+	numLines = (fontMet.horizontalAdvance(text)//120) + 1
 	
 	btn.text.setMaximumHeight(height * numLines + height)
 	btn.text.viewport().setAutoFillBackground(False)
@@ -134,7 +134,6 @@ def handleInput(inputO, ui, functions, mainW, deckHandler, obj): # checks input,
 			createImages(ui.stackedWidget.widget(3).pixmap(), 0, ui, obj, True)
 			flippingAnimation(3, ui, functions, mainW, obj)
 			
-		ui.lineEdit.clear()
 		functions.i += 1			
 	else:
 		ui.tabWidget.setTabEnabled(0, True)
@@ -151,7 +150,7 @@ def handleTimeout(functions, ui):
 	if not functions.inAnimation:
 		functions.inPractice = False
 		message = f"You timed out with {functions.i}/{len(functions.questions)} answered, and {functions.numright} correct. Hit enter to quit."
-		createPage("border: 0", message, 1, ui)
+		createPage("border: 0", message, 1, ui, 2)
 		ui.stackedWidget.setCurrentIndex(1)
 	
 def createImages(pixmap, index, ui, obj, proceed=False): # creates a pixmap image for both the front and back of the cards
