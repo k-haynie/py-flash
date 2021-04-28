@@ -62,21 +62,21 @@ def handlePractice(i, functions, ui): # fetches the answer from the functional m
 		functions.inPractice = False
 		percentageRight = round(functions.numright/len(functions.questions) * 100, 2)
 		if percentageRight < 70:
-			message = "You should practice these cards more."
+			ui.message = "You should practice these cards more."
 		elif percentageRight < 80:
-			message = "Fair job."
+			ui.message = "Fair job."
 		elif percentageRight < 90:
-			message = "Kudos!"
+			ui.message = "Kudos!"
 		elif percentageRight < 100:
-			message = "Terrific Job!"
+			ui.message = "Terrific Job!"
 		else:
-			message = "Perfect!"
-		finished = f"You finished with {str(functions.numright)} ({percentageRight}%) cards correct. {message} Hit enter to quit."
-		createPage("border: 0", finished, 1, ui)
+			ui.message = "Perfect!"
+		finished = f"You finished with {str(functions.numright)} ({percentageRight}%) cards correct. {ui.message} Hit enter to quit."
+		createPage("border: 0", finished, 1, ui, False, functions)
 		ui.stackedWidget.setCurrentIndex(1)
 		functions.timer.stop()
 
-def createPage(styleSheet, text, index, ui):
+def createPage(styleSheet, text, index, ui, dist=True, functions=0):
 	try:
 		ui.stackedWidget.removeWidget(ui.stackedWidget.widget(index))
 		ui.stackedWidget.widget(index).deleteLater()
@@ -89,9 +89,12 @@ def createPage(styleSheet, text, index, ui):
 	
 	fontMet = QFontMetrics(ui.tabWidget.font())
 	height = fontMet.height()
-	numLines = (fontMet.horizontalAdvance(text)//120) + 1
+	if dist:
+		numLines = (fontMet.horizontalAdvance(text)//135) + 1
+	else:
+		numLines = ((fontMet.horizontalAdvance(text) + fontMet.horizontalAdvance(str(functions.numright)) + fontMet.horizontalAdvance(ui.message))//135)
 	
-	btn.text.setMaximumHeight(height * numLines + height)
+	btn.text.setMaximumHeight((height * numLines) + height)
 	btn.text.viewport().setAutoFillBackground(False)
 	btn.text.setText(text)
 	btn.text.setAlignment(Qt.Alignment.AlignCenter)
@@ -184,6 +187,7 @@ def flippingAnimation(index, ui, functions, mainW, obj):
 	# For some reason, I could not get the setEasingCurve function to work normally on Qt6
 	# so I used the following roundabout way - perhaps that's a bug, but the lack of documentation and 
 	# comprehensive examples is sorely felt
+	ui.lineEdit.clear()
 	
 	inCubic = QEasingCurve()
 	inCubic.setType(QEasingCurve.Type.InCubic)
@@ -257,7 +261,6 @@ def resetSlide(ui):
 	
 def newCard(ui, functions):
 	ui.stackedWidget.setCurrentIndex(0)
-	ui.lineEdit.clear()
 	handlePractice(functions.i, functions, ui)
 	
 

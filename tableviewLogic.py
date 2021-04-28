@@ -35,7 +35,7 @@ def creation(tableData, model, ui, error, deleteSelection, selectionDisplay): # 
 	else:		
 		if ui.createButton.text() == "Save":
 			ui.createButton.setText("Create")
-			handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection)
+			handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection, True)
 		else:
 			if inputName == "":
 				error("You need to name your deck!")
@@ -48,10 +48,13 @@ def creation(tableData, model, ui, error, deleteSelection, selectionDisplay): # 
 				handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection)
 				ui.tabWidget.setCurrentIndex(0)
 				ui.comboBox.setCurrentIndex(0)
-		ui.inputName.setReadOnly(False)
 		ui.deckDelBtn.hide()
 			
-def handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection):
+def handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection, saving=False):
+	if saving:
+		name = "Decks/" + ui.realName + ".csv"
+		if deckname != name:
+			os.remove(name)
 	fileWrite(deckname, tableData)
 	ui.inputName.clear()
 	clearModel(tableData, model, ui)
@@ -74,7 +77,7 @@ def fileWrite(deckname, tabledata): # actually writes the files edited/produced 
 		f.close()		
 	except PermissionError:
 		os.chmod(deckname, stat.S_IWRITE)
-		self.fileWrite(deckname, tabledata)
+		fileWrite(deckname, tabledata)
 		
 def checkForEmpty(tableData, error):
 	rows = []
@@ -101,12 +104,12 @@ def loadToEdit(tableData, model, ui, dropdown, error, obj): # creates and return
 		filedir.setFileMode(QFileDialog.FileMode.ExistingFile)
 		filedir.setNameFilter("CSV files (*.csv)")
 		filedir.setDirectory("Decks/")
-		filedir.directoryEntered.connect(lambda: obj.dirCheck(self.filedir))
+		filedir.directoryEntered.connect(lambda: obj.dirCheck(filedir))
 		impFile = ""
 		if filedir.exec():
 			impFile = filedir.selectedFiles()
-		realName = os.path.split(impFile[0])[1][::-1].replace("vsc.", "", 1)[::-1]
-		subName = "Decks/" + realName + ".csv"
+		ui.realName = os.path.split(impFile[0])[1][::-1].replace("vsc.", "", 1)[::-1]
+		subName = "Decks/" + ui.realName + ".csv"
 		
 		clearModel(tableData, model, ui)
 		reformat = []
@@ -138,8 +141,7 @@ def loadToEdit(tableData, model, ui, dropdown, error, obj): # creates and return
 		model.verticalHeader = True
 		model.layoutChanged.emit()	
 		ui.tableView.setShowGrid(True)			
-		ui.inputName.setText(realName)
-		ui.inputName.setReadOnly(True)	
+		ui.inputName.setText(ui.realName)
 		ui.deckDelBtn.show()			
 	except FileNotFoundError: # thrown when the window is prematurely closed
 		pass
@@ -188,7 +190,6 @@ def deleteDeck(tableData, model, ui): # deletes
 	name = ui.inputName.text().strip()
 	os.remove(f"Decks/{name}.csv")
 	ui.inputName.clear()
-	ui.inputName.setReadOnly(False)
 	ui.deckDelBtn.hide()
 	ui.createButton.setText("Create")
 	clearModel(tableData, model, ui)
