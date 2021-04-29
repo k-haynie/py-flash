@@ -19,10 +19,8 @@ def createOption(i, ui, grid, responseHandler): # creates a deck image for each 
 			QPushButton {
 			border-image: url("assets/decks_empty.png");
 			color: rgb(255,255,255);}
-			QPushButton:checked {
-			border-image: url("assets/decks_selected.png");
-			color: rgb(0,0,0)}
 			""")
+		ui.newCheckBox.setEnabled(False)
 	originalName = (str(i)[::-1].replace("vsc.", "", 1))[::-1] # for a deck named .csv.csv 
 	spacedName = originalName.split(" ")
 	realName = produceName(spacedName, ui)
