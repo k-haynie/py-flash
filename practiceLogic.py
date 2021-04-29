@@ -32,8 +32,8 @@ def practiceInProgress(ui, functions, error, uncheckAll, deckHandler, obj): # st
 		ui.tabWidget.setTabVisible(0, False)
 		ui.tabWidget.setTabEnabled(2, False)
 		ui.tabWidget.setTabVisible(2, False)
-		ui.numRight.setText("Right: ")
-		ui.numWrong.setText("Wrong: ")
+		ui.numRight.setText("Right: 0")
+		ui.numWrong.setText("Wrong: 0")
 		ui.timerDisplay.display("--:--")
 		uncheckAll()
 		functions.inPractice = True
