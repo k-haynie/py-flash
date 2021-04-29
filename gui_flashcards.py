@@ -47,8 +47,7 @@ class executeGUI():
 		self.ui.toolButton_2.clicked.connect(self.settings)
 		self.ui.importButton.clicked.connect(lambda: tableviewLogic.importing(self.ui.tab_3, self.ui, self.deleteSelection, self.selectionDisplay, self.error))
 		self.ui.pushButton_3.clicked.connect(self.creationStarted)
-		self.ui.DeleteSelection.clicked.connect(lambda: self.confirmDialog(self.delSelection, "delete this selection"))
-		self.ui.DeleteSelection.setDisabled(True)
+		self.ui.DeleteSelection.clicked.connect(self.delSelectionWindow)
 		self.ui.revPractice.stateChanged.connect(lambda state: practice.practiceFlags("reverse", state, self.functions))
 		self.ui.timedPractice.stateChanged.connect(lambda state: practice.practiceFlags("timed", state, self.functions))
 		self.ui.selectAll.clicked.connect(self.selectAll)
@@ -68,9 +67,19 @@ class executeGUI():
 		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_DirClosedIcon))
 		self.ui.deckDelBtn.hide()
 		
-	def delSelection(self): # removes selected decks
-		for i in self.functions.decksToPractice:
-			os.remove(f"Decks/{i}")
+	def delSelectionWindow(self): # removes selected decks
+		index = self.ui.comboBox.currentText()
+		
+		with open("collections.txt", "r", encoding="utf-8") as collections:
+			data = json.load(collections)
+			base = data[index]
+		collections.close()
+		if base == 0:
+			base = os.listdir("Decks/")
+		self.createDialog(sorted(base, key=str.casefold), self.delSelection)
+		
+	def delSelection(self, name):
+		os.remove(f"Decks/{name}")
 		index = self.ui.comboBox.currentText()
 		self.loadSelection(index) 
 		
@@ -110,10 +119,8 @@ class executeGUI():
 				self.functions.decksToPractice.remove(str(name))
 		if self.functions.decksToPractice == []:
 			self.ui.pushButton.setDisabled(True)
-			self.ui.DeleteSelection.setDisabled(True)
 		else:
 			self.ui.pushButton.setDisabled(False)
-			self.ui.DeleteSelection.setDisabled(False)
 			
 	def uncheckAll(self):
 		for i in range(0, self.grid.count()):
