@@ -18,6 +18,8 @@ class executeGUI():
 		app = QApplication(sys.argv)
 		app.setStyle("Fusion")
 		
+		self.loadingWidget()
+		
 		self.mainW = QMainWindow()
 		self.ui = Ui_MainWindow()		
 		self.ui.setupUi(self.mainW)	
@@ -29,7 +31,40 @@ class executeGUI():
 		self.setupSlots()
 		self.retrievePrefs()	
 		self.mainW.show()
+		self.loading.hide()
+		self.loading.deleteLater()
 		sys.exit(app.exec())
+		
+	def loadingWidget(self):
+		self.loading = QDialog()
+		self.loading.setMinimumSize(200, 100)
+		self.loading.setMaximumSize(200, 100)
+		self.layout1 = QHBoxLayout()
+		
+		self.loadinggif = QLabel()
+		self.gif = QMovie("assets/loading.gif")
+		self.loadinggif.setMovie(self.gif)
+		self.loadingText = QLabel("Loading...")
+		
+		self.layout1.addStretch()
+		self.layout1.addWidget(self.loadinggif)
+		self.layout1.addStretch()
+		
+		self.layout2 = QHBoxLayout()
+		self.layout2.addStretch()
+		self.layout2.addWidget(self.loadingText)
+		self.layout2.addStretch()
+		
+		self.masterLayout = QVBoxLayout()
+		self.loading.setLayout(self.masterLayout)
+		self.masterLayout.addLayout(self.layout1)
+		self.masterLayout.addLayout(self.layout2)
+		
+		self.loading.setStyleSheet("background-color: rgb(255, 255, 255); color: rgb(0, 0, 0)")
+		
+		self.loading.setWindowTitle("Flashcard Whiz")
+		self.gif.start()
+		self.loading.show()
 		
 	def setupSlots(self): # handles slots and beginning processes
 		self.selectionDisplay()
