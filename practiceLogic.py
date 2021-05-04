@@ -89,12 +89,14 @@ def createPage(styleSheet, text, index, ui, dist=True, functions=0):
 	
 	fontMet = QFontMetrics(ui.tabWidget.font())
 	height = fontMet.height()
+	print(fontMet.horizontalAdvance(text), text)
 	if dist:
-		numLines = (fontMet.horizontalAdvance(text)//135) + 1
+		numLines = (fontMet.horizontalAdvance(text)//168.1) + 1
 	else:
-		numLines = ((fontMet.horizontalAdvance(text) + fontMet.horizontalAdvance(str(functions.numright)) + fontMet.horizontalAdvance(ui.message))//135)
+		numLines = ((fontMet.horizontalAdvance(text) + fontMet.horizontalAdvance(str(functions.numright)) + fontMet.horizontalAdvance(ui.message))//168.1) + 1
 	
 	btn.text.setMaximumHeight((height * numLines) + height)
+	btn.text.setMaximumWidth(200)
 	btn.text.viewport().setAutoFillBackground(False)
 	btn.text.setText(text)
 	btn.text.setAlignment(Qt.Alignment.AlignCenter)

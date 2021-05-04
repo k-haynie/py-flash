@@ -15,12 +15,12 @@ import loadDecks
 
 class executeGUI():
 	def __init__(self):
-		app = QApplication(sys.argv)
-		app.setStyle("Fusion")
-		
-		self.loadingWidget()
+		# app = QApplication(sys.argv)
+		# app.setStyle("Fusion")
 		
 		self.mainW = QMainWindow()
+		# self.loadingWidget()
+		
 		self.ui = Ui_MainWindow()		
 		self.ui.setupUi(self.mainW)	
 		
@@ -31,12 +31,12 @@ class executeGUI():
 		self.setupSlots()
 		self.retrievePrefs()	
 		self.mainW.show()
-		self.loading.hide()
-		self.loading.deleteLater()
-		sys.exit(app.exec())
+		# self.loading.hide()
+		# self.loading.deleteLater()
+		# sys.exit(app.exec())
 		
 	def loadingWidget(self):
-		self.loading = QDialog()
+		self.loading = QDialog(QMainW)
 		self.loading.setMinimumSize(200, 100)
 		self.loading.setMaximumSize(200, 100)
 		self.layout1 = QHBoxLayout()
