@@ -15,11 +15,7 @@ import loadDecks
 
 class executeGUI():
 	def __init__(self):
-		# app = QApplication(sys.argv)
-		# app.setStyle("Fusion")
-		
 		self.mainW = QMainWindow()
-		# self.loadingWidget()
 		
 		self.ui = Ui_MainWindow()		
 		self.ui.setupUi(self.mainW)	
@@ -31,40 +27,7 @@ class executeGUI():
 		self.setupSlots()
 		self.retrievePrefs()	
 		self.mainW.show()
-		# self.loading.hide()
-		# self.loading.deleteLater()
-		# sys.exit(app.exec())
 		
-	def loadingWidget(self):
-		self.loading = QDialog(QMainW)
-		self.loading.setMinimumSize(200, 100)
-		self.loading.setMaximumSize(200, 100)
-		self.layout1 = QHBoxLayout()
-		
-		self.loadinggif = QLabel()
-		self.gif = QMovie("assets/loading.gif")
-		self.loadinggif.setMovie(self.gif)
-		self.loadingText = QLabel("Loading...")
-		
-		self.layout1.addStretch()
-		self.layout1.addWidget(self.loadinggif)
-		self.layout1.addStretch()
-		
-		self.layout2 = QHBoxLayout()
-		self.layout2.addStretch()
-		self.layout2.addWidget(self.loadingText)
-		self.layout2.addStretch()
-		
-		self.masterLayout = QVBoxLayout()
-		self.loading.setLayout(self.masterLayout)
-		self.masterLayout.addLayout(self.layout1)
-		self.masterLayout.addLayout(self.layout2)
-		
-		self.loading.setStyleSheet("background-color: rgb(255, 255, 255); color: rgb(0, 0, 0)")
-		
-		self.loading.setWindowTitle("Flashcard Whiz")
-		self.gif.start()
-		self.loading.show()
 		
 	def setupSlots(self): # handles slots and beginning processes
 		self.selectionDisplay()
@@ -102,7 +65,7 @@ class executeGUI():
 		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_DirClosedIcon))
 		self.ui.deckDelBtn.hide()
 		
-	def delSelectionWindow(self): # removes selected decks
+	def delSelectionWindow(self): # opens "delete decks" window
 		index = self.ui.comboBox.currentText()
 		
 		with open("collections.txt", "r", encoding="utf-8") as collections:
@@ -113,7 +76,7 @@ class executeGUI():
 			base = os.listdir("Decks/")
 		self.createDialog(sorted(base, key=str.casefold), self.delSelection)
 		
-	def delSelection(self, name):
+	def delSelection(self, name): # deletes selected decks from "delete decks" window
 		os.remove(f"Decks/{name}")
 		index = self.ui.comboBox.currentText()
 		self.loadSelection(index) 
@@ -124,11 +87,7 @@ class executeGUI():
 				if self.grid.itemAt(i).widget().isEnabled():
 					self.grid.itemAt(i).widget().setChecked(True)
 			else:
-				self.grid.itemAt(i).widget().setChecked(False)		
-		if self.ui.selectAll.text() == "Select All":
-			self.ui.selectAll.setText("Select None")
-		else:
-			self.ui.selectAll.setText("Select All")
+				self.grid.itemAt(i).widget().setChecked(False)
 		
 	def selectionDisplay(self): # dynamically initializes deck choies 
 		self.ui.groupBox.hide()
@@ -152,10 +111,21 @@ class executeGUI():
 		elif state == False:
 			if name in self.functions.decksToPractice:
 				self.functions.decksToPractice.remove(str(name))
+				
+				
 		if self.functions.decksToPractice == []:
 			self.ui.pushButton.setDisabled(True)
+			self.ui.selectAll.setText("Select All")
 		else:
 			self.ui.pushButton.setDisabled(False)
+			
+		numEnabled = 0
+		for i in range(self.grid.count()):
+			if self.grid.itemAt(i).widget().isEnabled():
+				numEnabled += 1
+		
+		if len(self.functions.decksToPractice) == numEnabled:
+			self.ui.selectAll.setText("Select None")
 			
 	def uncheckAll(self):
 		for i in range(0, self.grid.count()):
@@ -200,6 +170,7 @@ class executeGUI():
 		self.ui.editButton.clicked.connect(lambda: tableviewLogic.loadToEdit(tableData, self.model, self.ui, self.dropdown, self.error, self))
 		self.ui.pushButton_2.clicked.connect(lambda: self.cancelCreation(tableData, self.model))
 		self.ui.inputName.setMaxLength(50)
+		self.ui.inputName.setValidator(QRegularExpressionValidator(QRegularExpression("[a-z-A-Z-0-9- _]+")))
 		
 		self.ui.pushButton_2.setDisabled(True)
 		self.ui.practiceCancelBtn.clicked.connect(lambda: self.confirmDialog(self.cancelPractice, "cancel your practice"))

@@ -89,7 +89,6 @@ def createPage(styleSheet, text, index, ui, dist=True, functions=0):
 	
 	fontMet = QFontMetrics(ui.tabWidget.font())
 	height = fontMet.height()
-	print(fontMet.horizontalAdvance(text), text)
 	if dist:
 		numLines = (fontMet.horizontalAdvance(text)//168.1) + 1
 	else:

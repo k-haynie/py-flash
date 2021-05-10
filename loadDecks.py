@@ -3,33 +3,34 @@ from PyQt6.QtGui import *
 import os
 					
 def createOption(i, ui, grid, responseHandler): # creates a deck image for each deck
-	ui.newCheckBox = QPushButton()
-	ui.newCheckBox.setCheckable(True)
-	fileSize = os.stat(f"Decks/{i}").st_size
-	if fileSize > 0:
-		ui.newCheckBox.setStyleSheet("""
-			QPushButton {
-			border-image: url("assets/decks.png");
-			color: rgb(0,0,0);}
-			QPushButton:checked {
-			border-image: url("assets/decks_selected.png");}
-			""")
-	else:
-		ui.newCheckBox.setStyleSheet("""
-			QPushButton {
-			border-image: url("assets/decks_empty.png");
-			color: rgb(255,255,255);}
-			""")
-		ui.newCheckBox.setEnabled(False)
-	originalName = (str(i)[::-1].replace("vsc.", "", 1))[::-1] # for a deck named .csv.csv 
-	spacedName = originalName.split(" ")
-	realName = produceName(spacedName, ui)
+	if os.path.exists(f"Decks/{i}"):
+		ui.newCheckBox = QPushButton()
+		ui.newCheckBox.setCheckable(True)
+		fileSize = os.stat(f"Decks/{i}").st_size
+		if fileSize > 0:
+			ui.newCheckBox.setStyleSheet("""
+				QPushButton {
+				border-image: url("assets/decks.png");
+				color: rgb(0,0,0);}
+				QPushButton:checked {
+				border-image: url("assets/decks_selected.png");}
+				""")
+		else:
+			ui.newCheckBox.setStyleSheet("""
+				QPushButton {
+				border-image: url("assets/decks_empty.png");
+				color: rgb(255,255,255);}
+				""")
+			ui.newCheckBox.setEnabled(False)
+		originalName = (str(i)[::-1].replace("vsc.", "", 1))[::-1] # for a deck named .csv.csv 
+		spacedName = originalName.split(" ")
+		realName = produceName(spacedName, ui)
 
-	ui.newCheckBox.setText(realName)
-	ui.newCheckBox.setMinimumSize(100, 133)
-	ui.newCheckBox.setMaximumSize(100, 133)
-	ui.newCheckBox.toggled.connect(lambda state, name=str(i): responseHandler(state, name))
-	grid.addWidget(ui.newCheckBox)
+		ui.newCheckBox.setText(realName)
+		ui.newCheckBox.setMinimumSize(100, 133)
+		ui.newCheckBox.setMaximumSize(100, 133)
+		ui.newCheckBox.toggled.connect(lambda state, name=str(i): responseHandler(state, name))
+		grid.addWidget(ui.newCheckBox)
 
 def produceName(listOfWords, ui): # splices names into lines according to display width
 	data = listOfWords

@@ -55,10 +55,25 @@ def handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelec
 		name = "Decks/" + ui.realName + ".csv"
 		if deckname != name:
 			os.remove(name)
+			
+			with open("collections.txt", "r+", encoding="utf-8") as collections:
+				data = json.load(collections)
+				for i in data:
+					try:
+						data[i][data[i].index(f"{ui.realName}.csv")] = f"{deckname[6:]}"
+					except:
+						pass
+				print(data)
+				collections.seek(0)
+				collections.truncate()
+				json.dump(data, collections)
+			collections.close()
+			
 	fileWrite(deckname, tableData)
 	ui.inputName.clear()
 	clearModel(tableData, model, ui)
 	deleteSelection()
+	ui.comboBox.setCurrentIndex(0)
 	selectionDisplay()
 			
 def fileWrite(deckname, tabledata): # actually writes the files edited/produced in the interface
