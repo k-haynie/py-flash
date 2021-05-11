@@ -5,10 +5,7 @@ from PyQt6.QtGui import *
 import sys, time
 
 class loadDialog(QWidget):
-	initialized = pyqtSignal()
-	gifLoaded = pyqtSignal()
-
-	def loadWidget(self, loading):
+	def loadWidget(self, loading, thread):
 		self.loading = loading
 		self.loading.setMinimumSize(200, 100)
 		self.loading.setMaximumSize(200, 100)
@@ -28,13 +25,23 @@ class loadDialog(QWidget):
 		self.loading.setWindowTitle("Flashcard Whiz")
 		self.gif.start()
 		self.loading.show()
-		self.initialized.connect(executeGUI)
-		self.initialized.emit()
+		
+		self.inst = loadGui()
+		self.inst.moveToThread(thread)
+		thread.started.connect(lambda: self.inst.generateGUI(self.loading))
+		thread.start()
+		
+
+class loadGui(QObject):
+	def generateGUI(self, loading):
+		executeGUI()
+		loading.hide()
+		
 	
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
 	app.setStyle("Fusion")
 	loading = QDialog()
-	loadDialog().loadWidget(loading)
-	loading.hide()
+	thread = QThread()
+	loadDialog().loadWidget(loading, thread)
 	sys.exit(app.exec())
