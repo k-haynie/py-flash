@@ -43,10 +43,12 @@ def practiceInProgress(ui, functions, error, uncheckAll, deckHandler, obj): # st
 	except (IndexError, UnicodeDecodeError):	
 		error(f"There is an issue with {obj.pluralSelected()[0]}. Try editing {obj.pluralSelected()[1]} in the \"Create\" tab.")
 		obj.functions = deckHandler()
+		closePractice(ui)
 		obj.uncheckAll()
 	except Exception:
 		error("Something went wrong!")
 		obj.functions = deckHandler()
+		closePractice(ui)
 		obj.uncheckAll()
 
 def handlePractice(i, functions, ui): # fetches the answer from the functional module, prints to the textBrowser
@@ -75,6 +77,16 @@ def handlePractice(i, functions, ui): # fetches the answer from the functional m
 		createPage("border: 0", finished, 1, ui, False, functions)
 		ui.stackedWidget.setCurrentIndex(1)
 		functions.timer.stop()
+		
+def closePractice(ui):
+	ui.tabWidget.setTabEnabled(0, True)
+	ui.tabWidget.setTabVisible(0, True)	
+	ui.tabWidget.setTabEnabled(2, True)
+	ui.tabWidget.setTabVisible(2, True)		
+	ui.tabWidget.setCurrentIndex(0)
+	ui.lineEdit.clear()
+	ui.tabWidget.setTabEnabled(1, False)
+	ui.tabWidget.setTabVisible(1, False)
 
 def createPage(styleSheet, text, index, ui, dist=True, functions=0):
 	try:
@@ -87,18 +99,14 @@ def createPage(styleSheet, text, index, ui, dist=True, functions=0):
 	btn.text = QTextEdit(btn)
 	btn.text.setMouseTracking(False)
 	
-	fontMet = QFontMetrics(ui.tabWidget.font())
-	height = fontMet.height()
-	if dist:
-		numLines = (fontMet.horizontalAdvance(text)//168.1) + 1
-	else:
-		numLines = ((fontMet.horizontalAdvance(text) + fontMet.horizontalAdvance(str(functions.numright)) + fontMet.horizontalAdvance(ui.message))//168.1) + 1
-	
-	btn.text.setMaximumHeight((height * numLines) + height)
-	btn.text.setMaximumWidth(200)
-	btn.text.viewport().setAutoFillBackground(False)
+	btn.text.setFixedWidth(180)
 	btn.text.setText(text)
 	btn.text.setAlignment(Qt.Alignment.AlignCenter)
+	
+	numLines = btn.text.document().documentLayout().documentSize().height()
+	btn.text.setMaximumHeight(numLines + 5)
+	
+	btn.text.viewport().setAutoFillBackground(False)
 	btn.text.setTextInteractionFlags(Qt.TextInteractionFlags.NoTextInteraction)
 	
 	btn.setLayout(QVBoxLayout(btn))

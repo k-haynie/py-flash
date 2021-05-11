@@ -32,22 +32,21 @@ def creation(tableData, model, ui, error, deleteSelection, selectionDisplay): # 
 	deckname = "Decks/" + inputName + ".csv"
 	if not checkForEmpty(tableData, error):
 		pass
-	else:		
-		if ui.createButton.text() == "Save":
+	else:
+		if inputName == "":
+			error("You need to name your deck!")
+		elif inputName == ".csv":
+			error("You cannot name your deck after a file type!")
+		elif inputName + ".csv" in os.listdir("Decks") and deckname != f"Decks/{ui.realName}.csv":
+			error("This deck already exists!")
+		elif ui.createButton.text() == "Save":
 			ui.createButton.setText("Create")
 			handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection, True)
 		else:
-			if inputName == "":
-				error("You need to name your deck!")
-			elif inputName == ".csv":
-				error("You cannot name your deck after a file type!")
-			elif inputName + ".csv" in os.listdir("Decks"):
-				error("This deck already exists!")
-			else:
-				model.layoutChanged.emit()
-				handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection)
-				ui.tabWidget.setCurrentIndex(0)
-				ui.comboBox.setCurrentIndex(0)
+			handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection)
+		model.layoutChanged.emit()
+		ui.tabWidget.setCurrentIndex(0)
+		ui.comboBox.setCurrentIndex(0)
 		ui.deckDelBtn.hide()
 			
 def handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelection, saving=False):
@@ -63,7 +62,6 @@ def handleCreation(deckname, tableData, ui, model, selectionDisplay, deleteSelec
 						data[i][data[i].index(f"{ui.realName}.csv")] = f"{deckname[6:]}"
 					except:
 						pass
-				print(data)
 				collections.seek(0)
 				collections.truncate()
 				json.dump(data, collections)

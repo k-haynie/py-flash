@@ -6,11 +6,10 @@ import sys, time
 
 class loadDialog(QWidget):
 	initialized = pyqtSignal()
+	gifLoaded = pyqtSignal()
 
-	
-	def loadWidget(self, loading, GuiThread):
+	def loadWidget(self, loading):
 		self.loading = loading
-		self.GuiThread = GuiThread
 		self.loading.setMinimumSize(200, 100)
 		self.loading.setMaximumSize(200, 100)
 		
@@ -26,29 +25,16 @@ class loadDialog(QWidget):
 		self.loading.setLayout(self.masterLayout)
 		self.loading.setStyleSheet("background-color: rgb(255, 255, 255); color: rgb(0, 0, 0)")
 		
-		self.initialized.connect(executeGUI)
-		
-		# self.Gui = worker()
-		# self.GuiThread.started.connect(self.Gui.work)
-		# self.Gui.moveToThread(self.GuiThread)
-		# self.initialized.connect(self.GuiThread.start)
-		
 		self.loading.setWindowTitle("Flashcard Whiz")
 		self.gif.start()
 		self.loading.show()
+		self.initialized.connect(executeGUI)
 		self.initialized.emit()
-	
-class worker(QObject):
-	def __init__(self, parent=None):
-		QObject.__init__(self, parent=parent)
-	def work(self):
-		executeGUI()
 	
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
 	app.setStyle("Fusion")
-	loading = QDialog()	
-	thread = QThread
-	loadDialog().loadWidget(loading, thread)
+	loading = QDialog()
+	loadDialog().loadWidget(loading)
 	loading.hide()
 	sys.exit(app.exec())

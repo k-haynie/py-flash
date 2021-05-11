@@ -65,6 +65,8 @@ class executeGUI():
 		self.ui.buttonRem.setIcon(QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_DirClosedIcon))
 		self.ui.deckDelBtn.hide()
 		
+		# self.ui.timerDisplay.setSegmentStyle(QLCDNumber.SegmentStyle.Flat)
+		
 	def delSelectionWindow(self): # opens "delete decks" window
 		index = self.ui.comboBox.currentText()
 		
@@ -244,6 +246,8 @@ class executeGUI():
 		background: none;}
 		QCheckBox::indicator::checked {
 		background: rgb(255, 255, 255)}
+		QLCDNumber {
+		background-color: rgb(25, 25, 25)}
 		""")
 		QCoreApplication.instance().setStyleSheet(f"* {darkSettings}")
 		
@@ -265,6 +269,8 @@ class executeGUI():
 		background-color: rgb(255, 255, 255)}
 		QLineEdit {
 		background-color: rgb(180, 180, 180)}
+		QLCDNumber {
+		background-color: rgb(140,140,140)}
 		""")
 		QCoreApplication.instance().setStyleSheet(f"* {lightSettings}")
 		
@@ -289,6 +295,7 @@ class executeGUI():
 		self.ui.tabWidget.setTabEnabled(1, False)
 		self.ui.tabWidget.setTabVisible(1, False)
 		self.functions = deckHandler()
+		self.ui.selectAll.setText("Select All")
 		
 	def cancelCreation(self, tableData, model): # clears the Q/A model
 		confirmWindow = QMessageBox(self.ui.tab_3)
@@ -309,6 +316,7 @@ class executeGUI():
 			model.verticalHeader = False
 			tableData.append(["", ""])
 			model.layoutChanged.emit()
+			self.ui.tableView.selectionModel().clear()
 		
 	def confirmDialog(self, method, action, tableData=0, model=0):
 		confirmWindow = QMessageBox(self.mainW)
@@ -463,9 +471,9 @@ class executeGUI():
 		optionModel = QStandardItemModel()
 		optionModel.setColumnCount(1)
 		for i in options:
-			if os.stat(f"Decks/{i}").st_size != 0:
+			if os.path.exists(f"Decks/{i}") and os.stat(f"Decks/{i}").st_size != 0:
 				optionModel.appendRow(QStandardItem(QIcon("assets/decks.png"), i))
-			else:
+			elif os.path.exists(f"Decks/{i}"):
 				optionModel.appendRow(QStandardItem(QIcon("assets/decks_empty.png"), i))
 		self.fdinst.listView.setModel(optionModel)
 		self.fdinst.listView.setTextElideMode(Qt.TextElideMode.ElideRight)
