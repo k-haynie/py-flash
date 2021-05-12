@@ -1,8 +1,7 @@
-from gui_flashcards import executeGUI
 from PyQt6.QtWidgets import *
-from PyQt6.QtCore import *
+from PyQt6.QtCore import QObject, QThread, Qt
 from PyQt6.QtGui import * 
-import sys, time
+import sys
 
 class loadDialog(QWidget):
 	def loadWidget(self, loading, thread):
@@ -33,7 +32,11 @@ class loadDialog(QWidget):
 		
 
 class loadGui(QObject):
+	def __init__(self, parent=None):
+		QObject.__init__(self, parent)
+		
 	def generateGUI(self, loading):
+		from gui_flashcards import executeGUI
 		executeGUI()
 		loading.hide()
 		
