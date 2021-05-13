@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import *
 from PyQt6.QtCore import QObject, QThread, Qt
-from PyQt6.QtGui import QMovie 
+from PyQt6.QtGui import *
 import sys
 
 class loadDialog(QWidget):
